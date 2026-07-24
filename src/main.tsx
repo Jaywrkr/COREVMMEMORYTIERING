@@ -1,59 +1,75 @@
-import { StrictMode } from "react";
+import { StrictMode, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  Activity,
   ArrowRight,
-  Blocks,
-  BrainCircuit,
-  GitBranch,
-  MousePointer2,
+  CheckCircle2,
+  Database,
+  Gauge,
+  HardDrive,
+  Layers3,
+  Monitor,
   Sparkles,
 } from "lucide-react";
+import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
 import "./styles.css";
 
-const stages = [
-  {
-    label: "Idea cruda",
-    text: "Tomamos conceptos densos, dudas y materiales sueltos.",
-  },
-  {
-    label: "Modelo mental",
-    text: "Los convertimos en una estructura visual que se pueda recorrer.",
-  },
-  {
-    label: "Interaccion",
-    text: "El usuario manipula, compara, revela y entiende por capas.",
-  },
-  {
-    label: "Publicacion",
-    text: "Cada avance vive en GitHub con PR, revision y merge.",
-  },
+const assessmentSteps = [
+  "Open a VM in vCenter.",
+  "Go to Monitor > Performance > Advanced.",
+  "Switch the view to Memory.",
+  "Set the period to Real-time.",
+  "Enable Active in Chart Options if it is not visible.",
 ];
 
-const principles = [
+const compatibilitySignals = [
   {
-    icon: BrainCircuit,
-    title: "Primero claridad",
-    body: "Cada pantalla debe responder una pregunta concreta antes de pedir atencion a la siguiente.",
+    icon: Activity,
+    title: "Workload active memory",
+    body: "Look at the VM/app behavior, not host memory. Memory Tiering demotes cold VM pages, not vmkernel pages.",
   },
   {
-    icon: MousePointer2,
-    title: "Aprender haciendo",
-    body: "Usaremos interacciones pequenas: sliders, estados, comparaciones y simulaciones ligeras.",
+    icon: Layers3,
+    title: "Default 2x memory model",
+    body: "With the default configuration, total available memory doubles: half DRAM as Tier 0, half NVMe as Tier 1.",
   },
   {
-    icon: Blocks,
-    title: "Modular por partes",
-    body: "Cada tema entra como un bloque independiente para poder iterar, revisar y mejorar sin romper lo anterior.",
+    icon: Gauge,
+    title: "50% or less active",
+    body: "The goal is to keep active pages inside DRAM so latency-sensitive reads and writes stay on the fastest tier.",
   },
 ];
 
 function App() {
+  const [dramCapacity, setDramCapacity] = useState(1024);
+  const [activeMemory, setActiveMemory] = useState(420);
+
+  const tiering = useMemo(() => {
+    const totalAfterTiering = dramCapacity * 2;
+    const activePercentOfTotal = Math.round((activeMemory / totalAfterTiering) * 100);
+    const activePercentOfDram = Math.round((activeMemory / dramCapacity) * 100);
+    const fitsInDram = activeMemory <= dramCapacity / 2;
+
+    return {
+      totalAfterTiering,
+      activePercentOfTotal,
+      activePercentOfDram,
+      fitsInDram,
+    };
+  }, [activeMemory, dramCapacity]);
+
   return (
     <main>
       <section className="hero" aria-labelledby="hero-title">
         <div className="heroBackdrop" aria-hidden="true">
-          <div className="orbit orbitOne" />
-          <div className="orbit orbitTwo" />
+          <div className="tier tierDram">
+            <Database size={24} />
+            <span>Tier 0 DRAM</span>
+          </div>
+          <div className="tier tierNvme">
+            <HardDrive size={24} />
+            <span>Tier 1 NVMe</span>
+          </div>
           <div className="signal signalA" />
           <div className="signal signalB" />
         </div>
@@ -61,42 +77,110 @@ function App() {
         <nav className="topbar" aria-label="Principal">
           <a className="brand" href="#top" aria-label="TE inicio">
             <Sparkles size={20} />
-            <span>TE Web Lab</span>
+            <span>CORE VM Memory Tiering</span>
           </a>
-          <a className="navAction" href="#workflow">
-            <GitBranch size={18} />
-            <span>Flujo PR</span>
+          <a className="navAction" href="#assessment">
+            <Monitor size={18} />
+            <span>Assessment</span>
           </a>
         </nav>
 
         <div className="heroContent">
-          <p className="eyebrow">Laboratorio creativo para ideas complejas</p>
-          <h1 id="hero-title">Una web que ensena por exploracion, no por paredes de texto.</h1>
+          <p className="eyebrow">VCF 9 memory tiering · Part 1</p>
+          <h1 id="hero-title">Before you enable NVMe Memory Tiering, find the active memory.</h1>
           <p className="lede">
-            Vamos a construir una experiencia por capas: visual, interactiva y lista para
-            crecer seccion por seccion con un flujo sano de GitHub.
+            The first decision is not about buying storage. It is about whether each workload
+            keeps its hot memory small enough to live comfortably in DRAM.
           </p>
           <div className="heroActions">
-            <a className="primaryButton" href="#canvas">
-              <span>Ver base inicial</span>
+            <a className="primaryButton" href="#simulator">
+              <span>Test the 50% rule</span>
               <ArrowRight size={18} />
             </a>
-            <a className="secondaryButton" href="#workflow">
-              Preparar PR flow
+            <a className="secondaryButton" href="#assessment">
+              Find it in vCenter
             </a>
           </div>
         </div>
       </section>
 
-      <section className="canvas" id="canvas" aria-labelledby="canvas-title">
+      <section className="ruleBand" id="simulator" aria-labelledby="sim-title">
         <div className="sectionHeader">
-          <p className="eyebrow">Canvas de trabajo</p>
-          <h2 id="canvas-title">Cada tema entrara con una forma propia.</h2>
+          <p className="eyebrow">Workload fit</p>
+          <h2 id="sim-title">The simple pre-check: active memory should be 50% or less of DRAM.</h2>
         </div>
 
-        <div className="principleGrid">
-          {principles.map(({ icon: Icon, title, body }) => (
-            <article className="principle" key={title}>
+        <div className="simulator">
+          <div className="controlPanel" aria-label="Memory tiering calculator">
+            <label>
+              <span>Host DRAM capacity</span>
+              <strong>{dramCapacity} GB</strong>
+              <input
+                type="range"
+                min="256"
+                max="2048"
+                step="128"
+                value={dramCapacity}
+                onChange={(event) => setDramCapacity(Number(event.target.value))}
+              />
+            </label>
+
+            <label>
+              <span>Workload active memory</span>
+              <strong>{activeMemory} GB</strong>
+              <input
+                type="range"
+                min="64"
+                max="1536"
+                step="32"
+                value={activeMemory}
+                onChange={(event) => setActiveMemory(Number(event.target.value))}
+              />
+            </label>
+
+            <div className={tiering.fitsInDram ? "result good" : "result caution"}>
+              <CheckCircle2 size={22} />
+              <div>
+                <strong>{tiering.fitsInDram ? "Strong candidate" : "Needs deeper review"}</strong>
+                <span>
+                  Active memory is {tiering.activePercentOfDram}% of DRAM and{" "}
+                  {tiering.activePercentOfTotal}% of tiered memory.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="memoryStack" aria-label="Tiered memory visualization">
+            <div className="stackHeader">
+              <span>Total after tiering</span>
+              <strong>{tiering.totalAfterTiering} GB</strong>
+            </div>
+            <div className="tierBar dramBar">
+              <span>DRAM · Tier 0</span>
+              <strong>{dramCapacity} GB</strong>
+              <i style={{ width: `${Math.min(tiering.activePercentOfDram, 100)}%` }} />
+            </div>
+            <div className="tierBar nvmeBar">
+              <span>NVMe · Tier 1</span>
+              <strong>{dramCapacity} GB</strong>
+            </div>
+            <p>
+              Cold or dormant VM pages can move down to NVMe. The active working set should
+              remain small enough that DRAM carries the latency-sensitive work.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="signals" aria-labelledby="signals-title">
+        <div className="sectionHeader compact">
+          <p className="eyebrow">What to look for</p>
+          <h2 id="signals-title">Compatibility starts with behavior, not a checkbox.</h2>
+        </div>
+
+        <div className="signalGrid">
+          {compatibilitySignals.map(({ icon: Icon, title, body }) => (
+            <article className="signalCard" key={title}>
               <div className="iconBox">
                 <Icon size={22} />
               </div>
@@ -107,22 +191,25 @@ function App() {
         </div>
       </section>
 
-      <section className="workflow" id="workflow" aria-labelledby="workflow-title">
-        <div className="sectionHeader compact">
-          <p className="eyebrow">Metodo de avance</p>
-          <h2 id="workflow-title">Del concepto al merge.</h2>
+      <section className="assessment" id="assessment" aria-labelledby="assessment-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">vCenter path</p>
+          <h2 id="assessment-title">How to find active memory consumption.</h2>
         </div>
 
-        <div className="timeline">
-          {stages.map((stage, index) => (
-            <article className="step" key={stage.label}>
-              <span className="stepNumber">{String(index + 1).padStart(2, "0")}</span>
-              <div>
-                <h3>{stage.label}</h3>
-                <p>{stage.text}</p>
-              </div>
-            </article>
-          ))}
+        <div className="assessmentGrid">
+          <ol className="pathList">
+            {assessmentSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+
+          <figure className="screenshotFrame">
+            <img src={vcenterActiveMemory} alt="vCenter Advanced Performance chart showing Active memory in KB." />
+            <figcaption>
+              Active memory appears in the Advanced Performance memory chart when the period is set to Real-time.
+            </figcaption>
+          </figure>
         </div>
       </section>
     </main>
