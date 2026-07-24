@@ -9,34 +9,34 @@ import {
   HardDrive,
   Layers3,
   Monitor,
-  Sparkles,
+  XCircle,
 } from "lucide-react";
 import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
 import "./styles.css";
 
 const assessmentSteps = [
-  "Open a VM in vCenter.",
-  "Go to Monitor > Performance > Advanced.",
-  "Switch the view to Memory.",
-  "Set the period to Real-time.",
-  "Enable Active in Chart Options if it is not visible.",
+  "Abrir una maquina virtual en vCenter.",
+  "Entrar a Monitor > Performance > Advanced.",
+  "Cambiar la vista a Memory.",
+  "Seleccionar el periodo Real-time.",
+  "En Chart Options, habilitar Active si no aparece en la grafica.",
 ];
 
 const compatibilitySignals = [
   {
     icon: Activity,
-    title: "Workload active memory",
-    body: "Look at the VM/app behavior, not host memory. Memory Tiering demotes cold VM pages, not vmkernel pages.",
+    title: "Mide la actividad de la aplicacion",
+    body: "La senal importante es el working set activo de la VM. Memory Tiering mueve paginas frias de VM, no paginas vmkernel del host.",
   },
   {
     icon: Layers3,
-    title: "Default 2x memory model",
-    body: "With the default configuration, total available memory doubles: half DRAM as Tier 0, half NVMe as Tier 1.",
+    title: "Entiende el modelo 2x",
+    body: "Con la configuracion por defecto, el host expone 100% mas memoria: una mitad en DRAM y otra mitad en NVMe.",
   },
   {
     icon: Gauge,
-    title: "50% or less active",
-    body: "The goal is to keep active pages inside DRAM so latency-sensitive reads and writes stay on the fastest tier.",
+    title: "Busca 50% o menos",
+    body: "Si la memoria activa cabe dentro de la mitad DRAM, el workload tiene mas probabilidad de conservar latencia consistente.",
   },
 ];
 
@@ -45,75 +45,85 @@ function App() {
   const [activeMemory, setActiveMemory] = useState(420);
 
   const tiering = useMemo(() => {
-    const totalAfterTiering = dramCapacity * 2;
-    const activePercentOfTotal = Math.round((activeMemory / totalAfterTiering) * 100);
+    const dramTierBudget = dramCapacity / 2;
+    const nvmeCapacity = dramCapacity;
+    const totalAfterTiering = dramCapacity + nvmeCapacity;
     const activePercentOfDram = Math.round((activeMemory / dramCapacity) * 100);
-    const fitsInDram = activeMemory <= dramCapacity / 2;
+    const activePercentOfRecommendedBudget = Math.round((activeMemory / dramTierBudget) * 100);
+    const fitsRecommendedBudget = activeMemory <= dramTierBudget;
 
     return {
+      dramTierBudget,
+      nvmeCapacity,
       totalAfterTiering,
-      activePercentOfTotal,
       activePercentOfDram,
-      fitsInDram,
+      activePercentOfRecommendedBudget,
+      fitsRecommendedBudget,
     };
   }, [activeMemory, dramCapacity]);
 
   return (
     <main>
       <section className="hero" aria-labelledby="hero-title">
-        <div className="heroBackdrop" aria-hidden="true">
-          <div className="tier tierDram">
-            <Database size={24} />
-            <span>Tier 0 DRAM</span>
-          </div>
-          <div className="tier tierNvme">
-            <HardDrive size={24} />
-            <span>Tier 1 NVMe</span>
-          </div>
-          <div className="signal signalA" />
-          <div className="signal signalB" />
-        </div>
-
         <nav className="topbar" aria-label="Principal">
-          <a className="brand" href="#top" aria-label="TE inicio">
-            <Sparkles size={20} />
+          <a className="brand" href="#top" aria-label="Inicio">
+            <span className="brandMark" />
             <span>CORE VM Memory Tiering</span>
           </a>
           <a className="navAction" href="#assessment">
             <Monitor size={18} />
-            <span>Assessment</span>
+            <span>vCenter</span>
           </a>
         </nav>
 
-        <div className="heroContent">
-          <p className="eyebrow">VCF 9 memory tiering · Part 1</p>
-          <h1 id="hero-title">Before you enable NVMe Memory Tiering, find the active memory.</h1>
-          <p className="lede">
-            The first decision is not about buying storage. It is about whether each workload
-            keeps its hot memory small enough to live comfortably in DRAM.
-          </p>
-          <div className="heroActions">
-            <a className="primaryButton" href="#simulator">
-              <span>Test the 50% rule</span>
-              <ArrowRight size={18} />
-            </a>
-            <a className="secondaryButton" href="#assessment">
-              Find it in vCenter
-            </a>
+        <div className="heroGrid">
+          <div className="heroContent">
+            <p className="eyebrow">VCF 9 · Parte 1</p>
+            <h1 id="hero-title">Antes de activar NVMe Memory Tiering, mide la memoria activa.</h1>
+            <p className="lede">
+              La pregunta inicial no es si NVMe puede ampliar la capacidad. La pregunta es si
+              el workload mantiene su memoria caliente dentro de DRAM.
+            </p>
+            <div className="heroActions">
+              <a className="primaryButton" href="#simulator">
+                <span>Probar regla 50%</span>
+                <ArrowRight size={18} />
+              </a>
+              <a className="secondaryButton" href="#assessment">
+                Ver ruta en vCenter
+              </a>
+            </div>
+          </div>
+
+          <div className="heroDiagram" aria-label="Modelo de memoria por tiers">
+            <div className="diagramHeader">
+              <span>Modelo por defecto</span>
+              <strong>2x memoria</strong>
+            </div>
+            <div className="diagramTier dramTier">
+              <Database size={22} />
+              <span>Tier 0 · DRAM</span>
+              <strong>Latencia baja</strong>
+            </div>
+            <div className="diagramTier nvmeTier">
+              <HardDrive size={22} />
+              <span>Tier 1 · NVMe</span>
+              <strong>Paginas frias</strong>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="ruleBand" id="simulator" aria-labelledby="sim-title">
         <div className="sectionHeader">
-          <p className="eyebrow">Workload fit</p>
-          <h2 id="sim-title">The simple pre-check: active memory should be 50% or less of DRAM.</h2>
+          <p className="eyebrow">Prerrequisito practico</p>
+          <h2 id="sim-title">La memoria activa debe ser 50% o menos de la capacidad DRAM.</h2>
         </div>
 
         <div className="simulator">
-          <div className="controlPanel" aria-label="Memory tiering calculator">
+          <div className="controlPanel" aria-label="Calculadora de Memory Tiering">
             <label>
-              <span>Host DRAM capacity</span>
+              <span>Capacidad DRAM del host</span>
               <strong>{dramCapacity} GB</strong>
               <input
                 type="range"
@@ -126,7 +136,7 @@ function App() {
             </label>
 
             <label>
-              <span>Workload active memory</span>
+              <span>Memoria activa del workload</span>
               <strong>{activeMemory} GB</strong>
               <input
                 type="range"
@@ -138,35 +148,52 @@ function App() {
               />
             </label>
 
-            <div className={tiering.fitsInDram ? "result good" : "result caution"}>
-              <CheckCircle2 size={22} />
+            <div className={tiering.fitsRecommendedBudget ? "result good" : "result caution"}>
+              {tiering.fitsRecommendedBudget ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
               <div>
-                <strong>{tiering.fitsInDram ? "Strong candidate" : "Needs deeper review"}</strong>
+                <strong>
+                  {tiering.fitsRecommendedBudget
+                    ? "Candidato favorable"
+                    : "Requiere analisis adicional"}
+                </strong>
                 <span>
-                  Active memory is {tiering.activePercentOfDram}% of DRAM and{" "}
-                  {tiering.activePercentOfTotal}% of tiered memory.
+                  La memoria activa usa {tiering.activePercentOfDram}% de DRAM y{" "}
+                  {tiering.activePercentOfRecommendedBudget}% del presupuesto recomendado.
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="memoryStack" aria-label="Tiered memory visualization">
+          <div className="memoryStack" aria-label="Visualizacion de tiers de memoria">
             <div className="stackHeader">
-              <span>Total after tiering</span>
+              <span>Memoria total tras tiering</span>
               <strong>{tiering.totalAfterTiering} GB</strong>
             </div>
+
             <div className="tierBar dramBar">
-              <span>DRAM · Tier 0</span>
-              <strong>{dramCapacity} GB</strong>
+              <div>
+                <span>DRAM · Tier 0</span>
+                <strong>{dramCapacity} GB</strong>
+              </div>
               <i style={{ width: `${Math.min(tiering.activePercentOfDram, 100)}%` }} />
             </div>
-            <div className="tierBar nvmeBar">
-              <span>NVMe · Tier 1</span>
-              <strong>{dramCapacity} GB</strong>
+
+            <div className="budgetLine">
+              <span>Umbral recomendado</span>
+              <strong>{tiering.dramTierBudget} GB activos</strong>
             </div>
+
+            <div className="tierBar nvmeBar">
+              <div>
+                <span>NVMe · Tier 1</span>
+                <strong>{tiering.nvmeCapacity} GB</strong>
+              </div>
+            </div>
+
             <p>
-              Cold or dormant VM pages can move down to NVMe. The active working set should
-              remain small enough that DRAM carries the latency-sensitive work.
+              Las paginas frias o dormidas pueden bajar a NVMe. Las paginas activas deben
+              quedarse en DRAM para que las lecturas y escrituras sensibles a latencia sigan
+              respondiendo rapido.
             </p>
           </div>
         </div>
@@ -174,8 +201,8 @@ function App() {
 
       <section className="signals" aria-labelledby="signals-title">
         <div className="sectionHeader compact">
-          <p className="eyebrow">What to look for</p>
-          <h2 id="signals-title">Compatibility starts with behavior, not a checkbox.</h2>
+          <p className="eyebrow">Criterios de evaluacion</p>
+          <h2 id="signals-title">La compatibilidad empieza por el comportamiento del workload.</h2>
         </div>
 
         <div className="signalGrid">
@@ -193,8 +220,8 @@ function App() {
 
       <section className="assessment" id="assessment" aria-labelledby="assessment-title">
         <div className="sectionHeader">
-          <p className="eyebrow">vCenter path</p>
-          <h2 id="assessment-title">How to find active memory consumption.</h2>
+          <p className="eyebrow">Ruta en vCenter</p>
+          <h2 id="assessment-title">Como encontrar el consumo de memoria activa.</h2>
         </div>
 
         <div className="assessmentGrid">
@@ -205,9 +232,13 @@ function App() {
           </ol>
 
           <figure className="screenshotFrame">
-            <img src={vcenterActiveMemory} alt="vCenter Advanced Performance chart showing Active memory in KB." />
+            <img
+              src={vcenterActiveMemory}
+              alt="Grafica Advanced Performance de vCenter mostrando la metrica Active memory en KB."
+            />
             <figcaption>
-              Active memory appears in the Advanced Performance memory chart when the period is set to Real-time.
+              La metrica Active aparece en la vista avanzada de memoria cuando el periodo esta
+              en Real-time. El valor se muestra en KB.
             </figcaption>
           </figure>
         </div>
