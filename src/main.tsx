@@ -244,10 +244,19 @@ const lenovoDrives = [
   "ThinkSystem Intel P5600 Mainstream NVMe PCIe 4.0",
 ];
 
+const workloadProfiles = [
+  { id: "vdi", label: "VDI estable", peak: 256, note: "Actividad baja y consistente" },
+  { id: "general", label: "Aplicacion general", peak: 480, note: "Patron comun de produccion" },
+  { id: "spiky", label: "Con picos", peak: 768, note: "La media puede enganar" },
+  { id: "latency", label: "Latencia critica", peak: 1024, note: "Revisar limitaciones primero" },
+];
+
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
   const [selectedRatio, setSelectedRatio] = useState(1);
+  const [selectedProfile, setSelectedProfile] = useState("general");
+  const [observationPoint, setObservationPoint] = useState(68);
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -266,6 +275,25 @@ function App() {
       fitsRecommendedBudget,
     };
   }, [activeMemory, dramCapacity]);
+
+  const exploration = useMemo(() => {
+    const samples = Array.from({ length: 25 }, (_, index) => {
+      const wave = Math.sin((index / 24) * Math.PI * 3 - 0.7) * 0.24;
+      const pulse = index === 16 || index === 17 ? 0.22 : 0;
+      return Math.round(Math.max(activeMemory * 0.36, activeMemory * (0.58 + wave + pulse)));
+    });
+    const pointIndex = Math.round((observationPoint / 100) * (samples.length - 1));
+    const observed = samples[pointIndex];
+    const peak = Math.max(...samples);
+    const warmInDram = Math.min(observed, dramCapacity);
+    const coldToNvme = Math.max(0, dramCapacity - warmInDram);
+    const candidate = peak <= dramCapacity / 2;
+    const line = samples
+      .map((sample, index) => `${(index / (samples.length - 1)) * 100},${100 - Math.min(92, (sample / Math.max(dramCapacity, peak)) * 100)}`)
+      .join(" ");
+
+    return { samples, pointIndex, observed, peak, warmInDram, coldToNvme, candidate, line };
+  }, [activeMemory, dramCapacity, observationPoint]);
 
   const sizing = useMemo(() => {
     const partitionSize = 4096;
@@ -358,14 +386,33 @@ function App() {
 
       <section className="ruleBand" id="simulator" aria-labelledby="sim-title">
         <div className="sectionHeader">
-          <p className="eyebrow">Prerrequisito practico</p>
+          <p className="eyebrow">Laboratorio de decision</p>
           <h2 id="sim-title">
-            La <Hint tip="Active memory representa la memoria que la VM esta usando activamente en el momento medido.">memoria activa</Hint> debe ser 50% o menos de la capacidad DRAM.
+            Mira como cambia la decision cuando observas el workload en distintos momentos.
           </h2>
         </div>
 
-        <div className="simulator">
-          <div className="controlPanel" aria-label="Calculadora de Memory Tiering">
+        <div className="decisionStudio">
+          <aside className="studioControls" aria-label="Controles de exploracion">
+            <div className="studioLabel"><span>Entrada</span><strong>01 / Perfil</strong></div>
+            <p>Elige un comportamiento y luego ajusta sus variables. No hay un workload universalmente bueno: hay evidencia suficiente o insuficiente.</p>
+            <div className="profilePicker" role="group" aria-label="Perfil del workload">
+              {workloadProfiles.map((profile) => (
+                <button
+                  className={selectedProfile === profile.id ? "profileButton active" : "profileButton"}
+                  key={profile.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedProfile(profile.id);
+                    setActiveMemory(profile.peak);
+                  }}
+                >
+                  <span>{profile.label}</span>
+                  <small>{profile.note}</small>
+                </button>
+              ))}
+            </div>
+
             <label>
               <span>Capacidad DRAM del host</span>
               <strong>{dramCapacity} GB</strong>
@@ -380,7 +427,7 @@ function App() {
             </label>
 
             <label>
-              <span>Memoria activa del workload</span>
+              <span>Pico de memoria activa observado</span>
               <strong>{activeMemory} GB</strong>
               <input
                 type="range"
@@ -391,55 +438,55 @@ function App() {
                 onChange={(event) => setActiveMemory(Number(event.target.value))}
               />
             </label>
+          </aside>
 
-            <div className={tiering.fitsRecommendedBudget ? "result good" : "result caution"}>
-              {tiering.fitsRecommendedBudget ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
-              <div>
-                <strong>
-                  {tiering.fitsRecommendedBudget
-                    ? "Candidato favorable"
-                    : "Requiere analisis adicional"}
-                </strong>
-                <span>
-                  La memoria activa usa {tiering.activePercentOfDram}% de DRAM y{" "}
-                  {tiering.activePercentOfRecommendedBudget}% del presupuesto recomendado.
-                </span>
-              </div>
+          <div className="studioCanvas" aria-label="Simulacion de memoria activa">
+            <div className="studioHeader">
+              <div><span>Observacion</span><strong>02 / Carga a traves del tiempo</strong></div>
+              <p>Arrastra el marcador. Esta lectura puntual ilustra lo que verias en Real-time; el veredicto usa el pico de la muestra.</p>
+            </div>
+            <div className="timelineChart">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Linea de memoria activa durante una ventana de observacion">
+                <line x1="0" x2="100" y1="50" y2="50" className="thresholdLine" />
+                <polyline points={exploration.line} className="activeLine" />
+                <line x1={observationPoint} x2={observationPoint} y1="0" y2="100" className="cursorLine" />
+                <circle cx={observationPoint} cy={100 - Math.min(92, (exploration.observed / Math.max(dramCapacity, exploration.peak)) * 100)} r="2.4" className="cursorDot" />
+              </svg>
+              <div className="chartScale"><span>Inicio</span><span>Umbral 50% DRAM</span><span>Fin</span></div>
+            </div>
+            <input
+              className="observationSlider"
+              type="range"
+              min="0"
+              max="100"
+              value={observationPoint}
+              onChange={(event) => setObservationPoint(Number(event.target.value))}
+              aria-label="Momento observado de la carga"
+            />
+            <div className="studioMetrics">
+              <article><span>Ahora</span><strong>{exploration.observed} GB</strong><p>Lectura puntual</p></article>
+              <article><span>Pico de muestra</span><strong>{exploration.peak} GB</strong><p>Base de la decision</p></article>
+              <article><span>Presupuesto DRAM</span><strong>{tiering.dramTierBudget} GB</strong><p>50% de DRAM</p></article>
+            </div>
+            <div className="tierScene">
+              <div className="tierSceneHeader"><span>Que esta ocurriendo en este instante</span><strong>{exploration.observed} GB activos</strong></div>
+              <div className="tierTrack dramTrack"><span>DRAM / Tier 0</span><i style={{ width: `${Math.min((exploration.warmInDram / dramCapacity) * 100, 100)}%` }} /><b>{exploration.warmInDram} GB activos permanecen en el tier rapido</b></div>
+              <div className="tierTrack nvmeTrack"><span>NVMe / Tier 1</span><i style={{ width: `${Math.min((exploration.coldToNvme / dramCapacity) * 100, 100)}%` }} /><b>{exploration.coldToNvme} GB quedan disponibles para paginas frias</b></div>
             </div>
           </div>
 
-          <div className="memoryStack" aria-label="Visualizacion de tiers de memoria">
-            <div className="stackHeader">
-              <span>Memoria total tras tiering</span>
-              <strong>{tiering.totalAfterTiering} GB</strong>
-            </div>
-
-            <div className="tierBar dramBar">
-              <div>
-                <span>DRAM - Tier 0</span>
-                <strong>{dramCapacity} GB</strong>
-              </div>
-              <i style={{ width: `${Math.min(tiering.activePercentOfDram, 100)}%` }} />
-            </div>
-
-            <div className="budgetLine">
-              <span><Hint tip="Este umbral representa la mitad de DRAM. Es el punto de referencia para decidir si el workload es buen candidato.">Umbral recomendado</Hint></span>
-              <strong>{tiering.dramTierBudget} GB activos</strong>
-            </div>
-
-            <div className="tierBar nvmeBar">
-              <div>
-                <span>NVMe - Tier 1</span>
-                <strong>{tiering.nvmeCapacity} GB</strong>
-              </div>
-            </div>
-
+          <aside className={exploration.candidate ? "studioVerdict good" : "studioVerdict caution"} aria-live="polite">
+            <div className="studioLabel"><span>Salida</span><strong>03 / Decision</strong></div>
+            {exploration.candidate ? <CheckCircle2 size={30} /> : <XCircle size={30} />}
+            <h3>{exploration.candidate ? "Candidato inicial" : "No activar todavia"}</h3>
             <p>
-              Las paginas frias o dormidas pueden bajar a NVMe. Las paginas activas deben
-              quedarse en DRAM para que las lecturas y escrituras sensibles a latencia sigan
-              respondiendo rapido.
+              {exploration.candidate
+                ? `El pico de ${exploration.peak} GB cabe dentro del presupuesto de ${tiering.dramTierBudget} GB. Aun valida periodos de carga reales.`
+                : `El pico de ${exploration.peak} GB supera el presupuesto de ${tiering.dramTierBudget} GB. Medir mas, aumentar DRAM o excluir este workload.`}
             </p>
-          </div>
+            <div className="verdictRule"><span>Regla aplicada</span><strong>{exploration.peak} GB / {tiering.dramTierBudget} GB</strong></div>
+            <a href="#assessment">Ver como obtener la evidencia en vCenter <ArrowRight size={16} /></a>
+          </aside>
         </div>
       </section>
 
