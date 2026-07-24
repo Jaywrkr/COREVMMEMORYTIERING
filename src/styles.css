@@ -3,7 +3,7 @@
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   color: #17201c;
-  background: #f6f4ee;
+  background: #f5f3ee;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -39,8 +39,8 @@ main {
   padding: 24px clamp(18px, 5vw, 72px) 64px;
   color: #f9f7ef;
   background:
-    linear-gradient(120deg, rgba(16, 32, 28, 0.92), rgba(18, 44, 58, 0.78)),
-    url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80")
+    linear-gradient(120deg, rgba(12, 22, 20, 0.92), rgba(18, 54, 61, 0.76)),
+    url("https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=2400&q=80")
       center / cover;
 }
 
@@ -51,28 +51,29 @@ main {
   overflow: hidden;
 }
 
-.orbit {
+.tier {
   position: absolute;
-  border: 1px solid rgba(253, 245, 213, 0.28);
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 188px;
+  padding: 14px 16px;
+  border: 1px solid rgba(249, 247, 239, 0.24);
+  border-radius: 8px;
+  background: rgba(249, 247, 239, 0.1);
+  backdrop-filter: blur(14px);
+  font-size: 0.92rem;
+  font-weight: 760;
 }
 
-.orbitOne {
-  width: 42vw;
-  height: 42vw;
-  min-width: 320px;
-  min-height: 320px;
-  right: -8vw;
-  top: 12vh;
+.tierDram {
+  right: clamp(20px, 15vw, 220px);
+  top: 23vh;
 }
 
-.orbitTwo {
-  width: 28vw;
-  height: 28vw;
-  min-width: 220px;
-  min-height: 220px;
-  right: 12vw;
-  bottom: 8vh;
+.tierNvme {
+  right: clamp(28px, 8vw, 130px);
+  bottom: 20vh;
 }
 
 .signal {
@@ -80,19 +81,19 @@ main {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #fed766;
-  box-shadow: 0 0 30px rgba(254, 215, 102, 0.85);
+  background: #77e4c8;
+  box-shadow: 0 0 30px rgba(119, 228, 200, 0.85);
   animation: pulse 2.8s ease-in-out infinite;
 }
 
 .signalA {
-  right: 18vw;
-  top: 26vh;
+  right: 22vw;
+  top: 34vh;
 }
 
 .signalB {
-  right: 36vw;
-  bottom: 19vh;
+  right: 15vw;
+  bottom: 32vh;
   animation-delay: 0.9s;
 }
 
@@ -130,13 +131,13 @@ main {
 .heroContent {
   position: relative;
   z-index: 1;
-  max-width: 920px;
+  max-width: 980px;
   padding-top: 14vh;
 }
 
 .eyebrow {
   margin: 0 0 14px;
-  color: #4e7b68;
+  color: #226b64;
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -144,7 +145,7 @@ main {
 }
 
 .hero .eyebrow {
-  color: #fed766;
+  color: #77e4c8;
 }
 
 h1,
@@ -156,14 +157,14 @@ p {
 
 h1 {
   margin-bottom: 22px;
-  max-width: 880px;
-  font-size: clamp(3rem, 8vw, 7.25rem);
-  line-height: 0.93;
+  max-width: 940px;
+  font-size: clamp(2.8rem, 7.4vw, 6.9rem);
+  line-height: 0.94;
   letter-spacing: 0;
 }
 
 .lede {
-  max-width: 690px;
+  max-width: 720px;
   color: rgba(249, 247, 239, 0.84);
   font-size: clamp(1.05rem, 2vw, 1.35rem);
   line-height: 1.55;
@@ -179,8 +180,8 @@ h1 {
 .primaryButton {
   padding: 13px 18px;
   border-radius: 8px;
-  color: #17201c;
-  background: #fed766;
+  color: #102321;
+  background: #77e4c8;
   font-weight: 780;
 }
 
@@ -188,22 +189,27 @@ h1 {
   color: #f9f7ef;
 }
 
-.canvas,
-.workflow {
+.ruleBand,
+.signals,
+.assessment {
   padding: 76px clamp(18px, 5vw, 72px);
 }
 
-.canvas {
-  background: #f6f4ee;
+.ruleBand {
+  background: #f5f3ee;
 }
 
-.workflow {
-  background: #ecf1ee;
+.signals {
+  background: #e9f0ec;
+}
+
+.assessment {
+  background: #fbfaf6;
 }
 
 .sectionHeader {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
   gap: clamp(24px, 6vw, 72px);
   align-items: end;
   margin-bottom: 34px;
@@ -220,16 +226,164 @@ h1 {
   max-width: 980px;
 }
 
-.principleGrid {
+.simulator,
+.assessmentGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.82fr) minmax(320px, 1.18fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.controlPanel,
+.memoryStack,
+.screenshotFrame {
+  border: 1px solid #d5ddd7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.controlPanel {
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+}
+
+label {
+  display: grid;
+  gap: 10px;
+}
+
+label span {
+  color: #5b6962;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+label strong {
+  color: #17201c;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #226b64;
+}
+
+.result {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.result strong,
+.result span {
+  display: block;
+}
+
+.result span {
+  margin-top: 4px;
+  color: #5b6962;
+  line-height: 1.45;
+}
+
+.result.good {
+  color: #174f47;
+  background: #dff4ed;
+}
+
+.result.caution {
+  color: #863d20;
+  background: #f8e6da;
+}
+
+.memoryStack {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 24px;
+}
+
+.stackHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.stackHeader span {
+  color: #5b6962;
+  font-weight: 700;
+}
+
+.stackHeader strong {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+}
+
+.tierBar {
+  position: relative;
+  min-height: 132px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  overflow: hidden;
+  padding: 18px;
+  border-radius: 8px;
+}
+
+.tierBar span,
+.tierBar strong {
+  position: relative;
+  z-index: 1;
+}
+
+.tierBar span {
+  font-weight: 800;
+}
+
+.tierBar strong {
+  font-size: 1.4rem;
+}
+
+.tierBar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  min-width: 8px;
+  background: rgba(119, 228, 200, 0.5);
+}
+
+.dramBar {
+  color: #102321;
+  background: #cdebe2;
+}
+
+.nvmeBar {
+  color: #f9f7ef;
+  background: #23474c;
+}
+
+.memoryStack p {
+  max-width: 780px;
+  margin-bottom: 0;
+  color: #5b6962;
+  line-height: 1.55;
+}
+
+.signalGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
-.principle {
+.signalCard {
   min-height: 260px;
   padding: 24px;
-  border: 1px solid #d7ddd5;
+  border: 1px solid #d0dbd4;
   border-radius: 8px;
   background: #ffffff;
 }
@@ -245,43 +399,64 @@ h1 {
   background: #d9ede5;
 }
 
-.principle h3,
-.step h3 {
+.signalCard h3 {
   margin-bottom: 10px;
   font-size: 1.15rem;
 }
 
-.principle p,
-.step p {
+.signalCard p {
   margin-bottom: 0;
   color: #5c665f;
   line-height: 1.55;
 }
 
-.timeline {
+.pathList {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid #bdcbc3;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: path;
 }
 
-.step {
-  min-height: 230px;
-  display: grid;
-  align-content: space-between;
-  gap: 32px;
-  padding: 20px 18px 0 0;
-  border-right: 1px solid #bdcbc3;
+.pathList li {
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #d5ddd7;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #22302b;
+  font-weight: 740;
+  counter-increment: path;
 }
 
-.step:last-child {
-  border-right: 0;
-}
-
-.stepNumber {
-  color: #bb3e2c;
+.pathList li::before {
+  content: counter(path, decimal-leading-zero);
+  color: #b5492e;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.88rem;
   font-weight: 800;
+}
+
+.screenshotFrame {
+  margin: 0;
+  overflow: hidden;
+}
+
+.screenshotFrame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+
+.screenshotFrame figcaption {
+  padding: 14px 16px 16px;
+  color: #5b6962;
+  line-height: 1.45;
 }
 
 @keyframes pulse {
@@ -297,7 +472,20 @@ h1 {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 860px) {
+  .tier {
+    display: none;
+  }
+
+  .sectionHeader,
+  .simulator,
+  .assessmentGrid,
+  .signalGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
   .hero {
     min-height: 92vh;
     padding-bottom: 48px;
@@ -315,29 +503,15 @@ h1 {
     padding-top: 12vh;
   }
 
-  .sectionHeader,
-  .principleGrid,
-  .timeline {
-    grid-template-columns: 1fr;
-  }
-
-  .principle {
+  .signalCard {
     min-height: auto;
   }
 
-  .iconBox {
-    margin-bottom: 28px;
+  .stackHeader {
+    display: grid;
   }
 
-  .timeline {
-    border-top: 0;
-    gap: 12px;
-  }
-
-  .step {
-    min-height: auto;
-    padding: 18px 0;
-    border-top: 1px solid #bdcbc3;
-    border-right: 0;
+  .tierBar {
+    min-height: 112px;
   }
 }
