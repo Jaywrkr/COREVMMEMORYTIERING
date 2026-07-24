@@ -137,6 +137,29 @@ const ratioOptions = [
   },
 ];
 
+const greenfieldVariables = [
+  {
+    label: "DRAM",
+    body: "Cantidad fisica de memoria rapida que compras por host.",
+    tip: "En greenfield puedes comprar DRAM pensando en memoria activa, no necesariamente en todo el pool historico.",
+  },
+  {
+    label: "NVMe",
+    body: "Dispositivo o conjunto de dispositivos que aportan capacidad al tier secundario.",
+    tip: "Puede ser un dispositivo standalone o varios detras de RAID, pero Memory Tiering necesita ver un dispositivo logico.",
+  },
+  {
+    label: "Particion",
+    body: "Espacio reservado en NVMe para que Memory Tiering lo consuma.",
+    tip: "Hoy la particion se crea antes de configurar Memory Tiering y puede llegar hasta 4 TB.",
+  },
+  {
+    label: "Ratio",
+    body: "Relacion DRAM:NVMe que define cuanto NVMe se usa para ampliar memoria.",
+    tip: "El default 1:1 es conservador. 1:2 y 1:4 son avanzados y requieren validar memoria activa.",
+  },
+];
+
 const formFactors = [
   {
     label: "2.5 pulgadas",
@@ -207,6 +230,24 @@ function App() {
       activePercentAfterRatio,
     };
   }, [activeMemory, dramCapacity, selectedRatio]);
+
+  const greenfield = useMemo(() => {
+    const requiredMemory = 1024;
+    const activeMemoryTarget = Math.round(requiredMemory * 0.3);
+    const conservativeDram = requiredMemory / 2;
+    const conservativeNvme = requiredMemory / 2;
+    const denseTotal = requiredMemory * 2;
+    const activeFitsInReducedDram = activeMemoryTarget <= conservativeDram;
+
+    return {
+      requiredMemory,
+      activeMemoryTarget,
+      conservativeDram,
+      conservativeNvme,
+      denseTotal,
+      activeFitsInReducedDram,
+    };
+  }, []);
 
   return (
     <main>
@@ -588,6 +629,83 @@ function App() {
             </figcaption>
           </figure>
         </div>
+      </section>
+
+      <section className="greenfield" aria-labelledby="greenfield-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Sizing greenfield</p>
+          <h2 id="greenfield-title">Si vas a comprar servidores nuevos, Memory Tiering entra directo en el calculo de costo.</h2>
+        </div>
+
+        <div className="greenfieldGrid">
+          <article className="greenfieldIntro">
+            <h3>Greenfield cambia la pregunta.</h3>
+            <p>
+              En un despliegue <Hint tip="Greenfield significa disenar y comprar infraestructura nueva con Memory Tiering considerado desde el inicio.">greenfield</Hint>, ya sabes que Memory Tiering existe antes de comprar servidores. Eso permite decidir cuanta DRAM comprar, cuanto NVMe agregar y que densidad quieres por host.
+            </p>
+            <p>
+              La condicion sigue siendo la misma: primero califica workloads. Si la mayoria ronda 30% de memoria activa, puedes planificar con mas precision y aun asi mantener una postura conservadora.
+            </p>
+          </article>
+
+          <div className="scenarioGrid" aria-label="Comparacion de estrategias greenfield">
+            <article className="scenarioCard">
+              <span>Escenario A</span>
+              <h3>Reducir DRAM y completar capacidad con NVMe.</h3>
+              <p>
+                Si necesitas {greenfield.requiredMemory} GB de memoria por host, puedes comprar{" "}
+                {greenfield.conservativeDram} GB de DRAM y {greenfield.conservativeNvme} GB de NVMe con ratio 1:1.
+              </p>
+              <strong>
+                {greenfield.activeFitsInReducedDram ? "La memoria activa estimada cabe en DRAM." : "Revisa la memoria activa antes de reducir DRAM."}
+              </strong>
+            </article>
+
+            <article className="scenarioCard dark">
+              <span>Escenario B</span>
+              <h3>Mantener DRAM y sumar densidad por host.</h3>
+              <p>
+                Tambien puedes conservar {greenfield.requiredMemory} GB de DRAM y sumar otro{" "}
+                {greenfield.requiredMemory} GB via NVMe. Obtienes {greenfield.denseTotal} GB efectivos por host.
+              </p>
+              <strong>Menos servidores pueden cubrir el mismo pool de workloads.</strong>
+            </article>
+          </div>
+        </div>
+
+        <div className="greenfieldMath">
+          <article>
+            <span>Memoria requerida por host</span>
+            <strong>{greenfield.requiredMemory} GB</strong>
+          </article>
+          <article>
+            <span>Memoria activa estimada</span>
+            <strong>{greenfield.activeMemoryTarget} GB</strong>
+          </article>
+          <article>
+            <span>DRAM conservadora</span>
+            <strong>{greenfield.conservativeDram} GB</strong>
+          </article>
+          <article>
+            <span>NVMe conservador</span>
+            <strong>{greenfield.conservativeNvme} GB</strong>
+          </article>
+        </div>
+
+        <div className="variableGrid">
+          {greenfieldVariables.map((variable) => (
+            <article className="variableCard" key={variable.label}>
+              <strong><Hint tip={variable.tip}>{variable.label}</Hint></strong>
+              <p>{variable.body}</p>
+            </article>
+          ))}
+        </div>
+
+        <p className="note light">
+          El ahorro puede venir de comprar menos DRAM, o de comprar menos servidores al aumentar
+          densidad por host. En ambos casos, la decision debe basarse en memoria activa real,
+          tamano NVMe, tamano de particion y ratio DRAM:NVMe.
+        </p>
       </section>
 
       <section className="nvme" aria-labelledby="nvme-title">
