@@ -1254,6 +1254,408 @@ input[type="range"] {
   }
 }
 
+/* Refined composition: use an editorial narrative instead of a stack of equal cards. */
+.hero {
+  min-height: 820px;
+  padding-top: 22px;
+  background: #07111d;
+}
+
+.topbar {
+  padding-bottom: 10px;
+}
+
+.topbarLinks {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.topbarLinks a {
+  color: #9aacbd;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 140ms ease;
+}
+
+.topbarLinks a:hover {
+  color: #ffffff;
+}
+
+.heroGrid {
+  position: relative;
+  align-items: center;
+  min-height: 650px;
+  padding-top: 56px;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+}
+
+.hero h1 {
+  max-width: 780px;
+  font-size: clamp(3.6rem, 6.2vw, 6.9rem);
+  letter-spacing: 0;
+}
+
+.hero .lede {
+  max-width: 580px;
+  font-size: 1.16rem;
+}
+
+.heroProof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  max-width: 640px;
+  margin-top: 32px;
+  color: #c5d6e7;
+  font-size: 0.85rem;
+}
+
+.heroProof span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.heroProof b {
+  color: #66d1ff;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+}
+
+.heroVisualFrame {
+  position: absolute;
+  right: -8vw;
+  bottom: -84px;
+  z-index: 1;
+  width: min(62vw, 940px);
+  margin: 0;
+}
+
+.heroVisualFrame::after {
+  content: "";
+  position: absolute;
+  top: 8%;
+  right: 0;
+  bottom: 12%;
+  width: 1px;
+  background: #3d92ff;
+  box-shadow: -720px 560px 0 #173451;
+  opacity: 0.75;
+}
+
+.heroVisualFrame img {
+  display: block;
+  width: 100%;
+  mix-blend-mode: screen;
+  opacity: 0.92;
+}
+
+.heroVisualFrame figcaption {
+  position: absolute;
+  right: 7%;
+  bottom: 15%;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+  color: #c5d6e7;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.heroVisualFrame figcaption span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.heroVisualFrame i {
+  width: 8px;
+  height: 8px;
+}
+
+.dramDot { background: #72e0b0; }
+.nvmeDot { background: #3d92ff; }
+
+.heroVisualMetric {
+  position: absolute;
+  right: 6%;
+  top: 8%;
+  z-index: 1;
+  display: grid;
+  gap: 5px;
+  color: #d7e7f8;
+}
+
+.heroVisualMetric span {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.heroVisualMetric strong {
+  color: #ffffff;
+  font-size: clamp(3.2rem, 6vw, 6rem);
+  font-weight: 300;
+  line-height: 0.8;
+}
+
+.sectionHeader {
+  margin-bottom: 56px;
+}
+
+.sectionHeader .eyebrow {
+  padding-top: 4px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.ruleBand,
+.signals,
+.assessment,
+.statistics,
+.limitations,
+.software,
+.sizing,
+.greenfield,
+.nvme {
+  padding-block: 128px;
+}
+
+.signalGrid {
+  grid-template-columns: 1.1fr 0.9fr 1fr;
+}
+
+.signalCard:first-child {
+  color: #ffffff;
+  background: #0f62fe;
+}
+
+.signalCard:first-child .iconBox {
+  color: #0f62fe;
+  background: #ffffff;
+}
+
+.signalCard:first-child p {
+  color: #d9e7ff;
+}
+
+.signalCard:nth-child(2) {
+  background: #dbeafe;
+}
+
+.assessmentGrid {
+  grid-template-columns: minmax(260px, 0.65fr) minmax(520px, 1.35fr);
+}
+
+.pathList {
+  background: #07111d;
+}
+
+.pathList li {
+  color: #eaf3fb;
+  background: #0b1825;
+  border-left: 3px solid transparent;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.pathList li:hover {
+  border-left-color: #3d92ff;
+  background: #122638;
+}
+
+.pathList li::before {
+  color: #66d1ff;
+}
+
+.evidenceRail {
+  margin-top: 18px;
+}
+
+.evidenceRail article {
+  min-height: 230px;
+}
+
+.riskGrid {
+  grid-template-columns: minmax(260px, 0.6fr) minmax(520px, 1.4fr);
+}
+
+.sizingGrid {
+  grid-template-columns: minmax(260px, 0.65fr) minmax(550px, 1.35fr);
+}
+
+.sizingPanel {
+  color: #eaf3fb;
+  background: #0b1825;
+}
+
+.sizingPanel p {
+  color: #c5d6e7;
+}
+
+.ratioPanel {
+  padding: 0;
+}
+
+.ratioHeader {
+  padding: 28px 32px;
+  background: #ffffff;
+}
+
+.ratioButtons {
+  padding: 1px;
+}
+
+.ratioButton {
+  min-height: 152px;
+  padding: 22px;
+}
+
+.sizingMetrics {
+  padding: 1px;
+}
+
+.sizingMetrics article {
+  min-height: 156px;
+  padding: 20px;
+}
+
+.greenfieldGrid {
+  grid-template-columns: minmax(280px, 0.58fr) minmax(600px, 1.42fr);
+}
+
+.greenfieldIntro {
+  color: #ffffff;
+  background: #0f62fe;
+}
+
+.greenfieldIntro p {
+  color: #d9e7ff;
+}
+
+.scenarioCard {
+  min-height: 410px;
+}
+
+.selectionBlock {
+  grid-template-columns: minmax(280px, 0.62fr) minmax(540px, 1.38fr);
+}
+
+.selectionCopy {
+  color: #eaf3fb;
+  background: #07111d;
+}
+
+.selectionCopy h3,
+.selectionCopy p:not(.eyebrow) {
+  color: inherit;
+}
+
+.selectionCopy .eyebrow {
+  color: #66d1ff;
+}
+
+.selectionBlock .screenshotFrame {
+  grid-row: span 2;
+}
+
+.formFactorGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-column: auto;
+}
+
+.formFactorCard {
+  min-height: 190px;
+}
+
+.filterJourney {
+  margin-top: 48px;
+}
+
+.lenovoBlock {
+  margin-top: 48px;
+}
+
+@media (max-width: 920px) {
+  .heroGrid {
+    min-height: auto;
+    padding-bottom: 400px;
+  }
+
+  .heroVisualFrame {
+    right: -10vw;
+    bottom: -10px;
+    width: min(100vw, 760px);
+  }
+
+  .assessmentGrid,
+  .riskGrid,
+  .sizingGrid,
+  .greenfieldGrid,
+  .selectionBlock {
+    grid-template-columns: 1fr;
+  }
+
+  .selectionBlock .screenshotFrame {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .topbarLinks {
+    gap: 14px;
+  }
+
+  .topbarLinks a {
+    font-size: 0.62rem;
+  }
+
+  .hero {
+    min-height: 780px;
+  }
+
+  .heroGrid {
+    padding-top: 58px;
+    padding-bottom: 280px;
+  }
+
+  .hero h1 {
+    font-size: clamp(3.15rem, 16vw, 4.5rem);
+  }
+
+  .heroVisualFrame {
+    right: -18vw;
+    bottom: 0;
+    width: 130vw;
+  }
+
+  .heroVisualFrame figcaption,
+  .heroVisualMetric {
+    display: none;
+  }
+
+  .ruleBand,
+  .signals,
+  .assessment,
+  .statistics,
+  .limitations,
+  .software,
+  .sizing,
+  .greenfield,
+  .nvme {
+    padding-block: 80px;
+  }
+}
+
 @media (max-width: 620px) {
   .hero {
     min-height: 92vh;

@@ -20,6 +20,7 @@ import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
 import nvmeDeviceSelection from "./assets/nvme-device-selection.png";
 import nvmeSizingRatios from "./assets/nvme-sizing-ratios.png";
 import vcenterStatisticsLevels from "./assets/vcenter-statistics-levels.png";
+import memoryTieringHero from "./assets/memory-tiering-hero.png";
 import "./styles.css";
 
 type HintProps = {
@@ -311,10 +312,11 @@ function App() {
             <span className="brandMark" />
             <span>CORE VM Memory Tiering</span>
           </a>
-          <a className="navAction" href="#assessment">
-            <Monitor size={18} />
-            <span>vCenter</span>
-          </a>
+          <div className="topbarLinks">
+            <a href="#assessment">01 Medir</a>
+            <a href="#sizing">02 Dimensionar</a>
+            <a href="#nvme">03 Seleccionar</a>
+          </div>
         </nav>
 
         <div className="heroGrid">
@@ -327,6 +329,11 @@ function App() {
               La pregunta inicial no es si NVMe puede ampliar la capacidad. La pregunta es si
               el workload mantiene su <Hint tip="Memoria caliente es la memoria que la aplicacion consulta o modifica con frecuencia.">memoria caliente</Hint> dentro de <Hint tip="DRAM es la memoria principal del host. Es mucho mas rapida que NVMe y debe absorber lo activo.">DRAM</Hint>.
             </p>
+            <div className="heroProof" aria-label="Resumen de decision">
+              <span><b>01</b> Observa Active en carga real</span>
+              <span><b>02</b> Valida que quepa en DRAM</span>
+              <span><b>03</b> Dimensiona el NVMe</span>
+            </div>
             <div className="heroActions">
               <a className="primaryButton" href="#simulator">
                 <span>Probar regla 50%</span>
@@ -338,22 +345,14 @@ function App() {
             </div>
           </div>
 
-          <div className="heroDiagram" aria-label="Modelo de memoria por tiers">
-            <div className="diagramHeader">
-              <span>Modelo por defecto</span>
-              <strong>2x memoria</strong>
-            </div>
-            <div className="diagramTier dramTier">
-              <Database size={22} />
-              <span><Hint tip="Tier 0 es el nivel rapido. Aqui queremos que viva la memoria activa.">Tier 0 - DRAM</Hint></span>
-              <strong>Latencia baja</strong>
-            </div>
-            <div className="diagramTier nvmeTier">
-              <HardDrive size={22} />
-              <span><Hint tip="Tier 1 usa NVMe para paginas frias o dormidas. Aporta capacidad, pero no reemplaza la velocidad de DRAM.">Tier 1 - NVMe</Hint></span>
-              <strong>Paginas frias</strong>
-            </div>
-          </div>
+          <figure className="heroVisualFrame" aria-label="Modelo visual de tiers de memoria">
+            <img src={memoryTieringHero} alt="Visual tecnico de un servidor con los tiers DRAM y NVMe." />
+            <figcaption>
+              <span><i className="dramDot" />Tier 0 / DRAM / activo</span>
+              <span><i className="nvmeDot" />Tier 1 / NVMe / frio</span>
+            </figcaption>
+            <div className="heroVisualMetric"><span>Capacidad por defecto</span><strong>2x</strong></div>
+          </figure>
         </div>
       </section>
 
