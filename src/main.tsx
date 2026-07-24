@@ -17,6 +17,8 @@ import {
   XCircle,
 } from "lucide-react";
 import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
+import nvmeDeviceSelection from "./assets/nvme-device-selection.png";
+import nvmeSizingRatios from "./assets/nvme-sizing-ratios.png";
 import vcenterStatisticsLevels from "./assets/vcenter-statistics-levels.png";
 import "./styles.css";
 
@@ -117,6 +119,42 @@ const nvmeRequirements = [
   },
 ];
 
+const ratioOptions = [
+  {
+    value: 1,
+    label: "1:1",
+    description: "Default seguro para la mayoria de workloads evaluados.",
+  },
+  {
+    value: 2,
+    label: "1:2",
+    description: "Usa mas NVMe cuando la memoria activa es baja y consistente.",
+  },
+  {
+    value: 4,
+    label: "1:4",
+    description: "Configuracion avanzada para workloads con actividad muy baja.",
+  },
+];
+
+const formFactors = [
+  {
+    label: "2.5 pulgadas",
+    body: "Buena opcion cuando el servidor todavia tiene bahias frontales disponibles.",
+    tip: "Es el formato clasico de muchos SSD empresariales. Facilita reemplazo fisico y mantenimiento.",
+  },
+  {
+    label: "E3.S pluggable",
+    body: "Formato moderno, removible y pensado para densidad en plataformas nuevas.",
+    tip: "E3.S es comun en servidores recientes que buscan mas densidad y mejor flujo de aire que formatos anteriores.",
+  },
+  {
+    label: "M.2",
+    body: "Util cuando las bahias de 2.5 pulgadas ya estan ocupadas.",
+    tip: "M.2 puede ser practico, pero valida siempre endurance, performance y soporte del OEM. No asumas que cualquier M.2 sirve.",
+  },
+];
+
 const lenovoDrives = [
   "ThinkSystem CD8P Mixed Use NVMe PCIe 5.0",
   "ThinkSystem PM1745 Mixed Use NVMe PCIe 5.0",
@@ -131,6 +169,7 @@ const lenovoDrives = [
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
+  const [selectedRatio, setSelectedRatio] = useState(1);
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -149,6 +188,25 @@ function App() {
       fitsRecommendedBudget,
     };
   }, [activeMemory, dramCapacity]);
+
+  const sizing = useMemo(() => {
+    const partitionSize = 4096;
+    const ratioRows = ratioOptions.map((ratio) => ({
+      ...ratio,
+      nvmeUsed: Math.min(partitionSize, dramCapacity * ratio.value),
+    }));
+    const currentNvmeUsed = Math.min(partitionSize, dramCapacity * selectedRatio);
+    const suggestedNvmeSize = Math.max(dramCapacity, currentNvmeUsed);
+    const activePercentAfterRatio = Math.round((activeMemory / dramCapacity) * 100);
+
+    return {
+      partitionSize,
+      ratioRows,
+      currentNvmeUsed,
+      suggestedNvmeSize,
+      activePercentAfterRatio,
+    };
+  }, [activeMemory, dramCapacity, selectedRatio]);
 
   return (
     <main>
@@ -421,6 +479,117 @@ function App() {
         </div>
       </section>
 
+      <section className="sizing" id="sizing" aria-labelledby="sizing-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Sizing brownfield</p>
+          <h2 id="sizing-title">En infraestructura existente, compra NVMe pensando en el ratio que podrias necesitar despues.</h2>
+        </div>
+
+        <div className="sizingGrid">
+          <div className="sizingPanel">
+            <p>
+              En un despliegue <Hint tip="Brownfield significa adoptar la capacidad en infraestructura existente, no disenar todo desde cero.">brownfield</Hint>, el punto de partida simple es comprar un dispositivo NVMe al menos del mismo tamano que la DRAM del host.
+            </p>
+            <p>
+              La razon es el ratio por defecto <Hint tip="1:1 significa que por cada unidad de DRAM se usa una unidad equivalente de NVMe para Memory Tiering.">DRAM:NVMe 1:1</Hint>. Si un host tiene 1 TB de DRAM, necesitas al menos 1 TB de NVMe para duplicar la memoria disponible.
+            </p>
+            <p>
+              Pero si tus workloads tienen memoria activa muy baja, por ejemplo VDI con 10% activo de forma consistente, puedes planear para ratios avanzados como 1:2 o 1:4.
+            </p>
+          </div>
+
+          <div className="ratioPanel" aria-label="Calculadora de sizing por ratio DRAM a NVMe">
+            <div className="ratioHeader">
+              <span>Ratio activo</span>
+              <strong>1:{selectedRatio}</strong>
+            </div>
+
+            <div className="ratioButtons" role="group" aria-label="Seleccion de ratio DRAM a NVMe">
+              {ratioOptions.map((ratio) => (
+                <button
+                  className={selectedRatio === ratio.value ? "ratioButton active" : "ratioButton"}
+                  key={ratio.label}
+                  type="button"
+                  onClick={() => setSelectedRatio(ratio.value)}
+                >
+                  <span>{ratio.label}</span>
+                  <small>{ratio.description}</small>
+                </button>
+              ))}
+            </div>
+
+            <div className="sizingMetrics">
+              <article>
+                <span>DRAM del host</span>
+                <strong>{dramCapacity} GB</strong>
+              </article>
+              <article>
+                <span>Particion NVMe</span>
+                <strong>{sizing.partitionSize} GB</strong>
+              </article>
+              <article>
+                <span>NVMe usado</span>
+                <strong>{sizing.currentNvmeUsed} GB</strong>
+              </article>
+              <article>
+                <span>Compra minima sugerida</span>
+                <strong>{sizing.suggestedNvmeSize} GB</strong>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div className="ratioTableWrap">
+          <table className="ratioTable">
+            <thead>
+              <tr>
+                <th>DRAM:NVMe</th>
+                <th>DRAM size</th>
+                <th>NVMe partition size</th>
+                <th>NVMe used</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sizing.ratioRows.map((row) => (
+                <tr className={selectedRatio === row.value ? "selectedRow" : ""} key={row.label}>
+                  <td>{row.label}</td>
+                  <td>{dramCapacity} GB</td>
+                  <td>{sizing.partitionSize} GB</td>
+                  <td>{row.nvmeUsed} GB</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p>
+            La particion puede quedar grande desde el inicio. Si compras 4 TB NVMe para un host
+            con 1 TB DRAM, el default 1:1 usara 1 TB. Si luego cambias a 1:2, usara 2 TB sin
+            recrear la particion.
+          </p>
+        </div>
+
+        <div className="sizingEvidence">
+          <article>
+            <AlertTriangle size={22} />
+            <h3>No cambies el ratio sin validar memoria activa.</h3>
+            <p>
+              El ratio DRAM:NVMe es una configuracion avanzada. Antes de subirlo, confirma que
+              la memoria activa de tus workloads cabe en la DRAM disponible. Si no, puedes mover
+              paginas calientes fuera del tier rapido.
+            </p>
+          </article>
+          <figure className="screenshotFrame">
+            <img
+              src={nvmeSizingRatios}
+              alt="Tabla y diagrama de sizing para ratios DRAM a NVMe 1:1, 1:2 y 1:4."
+            />
+            <figcaption>
+              El sizing debe considerar el maximo de particion soportado, los ratios posibles y
+              la actividad real de memoria.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
       <section className="nvme" aria-labelledby="nvme-title">
         <div className="sectionHeader">
           <p className="eyebrow">Compatibilidad NVMe</p>
@@ -450,6 +619,39 @@ function App() {
           >
             Abrir Broadcom Compatibility Guide
           </a>
+        </div>
+
+        <div className="selectionBlock">
+          <div className="selectionCopy">
+            <p className="eyebrow">Seleccion del dispositivo</p>
+            <h3>Primero filtra por calidad. Despues elige el formato que calza en tu servidor.</h3>
+            <p>
+              En el Broadcom Compatibility Guide, selecciona <Hint tip="Device Type limita la busqueda a dispositivos NVMe, no SATA, SAS o PCI-E genericos.">Device Type: NVMe</Hint>,{" "}
+              <Hint tip="Endurance Class D equivale a 7300 TBW o mas. Es una senal de durabilidad para cargas con muchas escrituras.">Endurance Class D</Hint> y{" "}
+              <Hint tip="Class F y G agrupan dispositivos con alto volumen de escrituras por segundo.">Performance Class F o G</Hint>. Luego usa filtros como{" "}
+              <Hint tip="Form Factor describe el formato fisico: 2.5 pulgadas, E3.S, M.2 u otros.">Form Factor</Hint> y{" "}
+              <Hint tip="DWPD mide cuantas veces puedes escribir toda la capacidad del disco cada dia durante su garantia.">DWPD</Hint> para escoger el mejor drive para tu ambiente.
+            </p>
+          </div>
+
+          <div className="formFactorGrid">
+            {formFactors.map((factor) => (
+              <article className="formFactorCard" key={factor.label}>
+                <strong><Hint tip={factor.tip}>{factor.label}</Hint></strong>
+                <p>{factor.body}</p>
+              </article>
+            ))}
+          </div>
+
+          <figure className="screenshotFrame">
+            <img
+              src={nvmeDeviceSelection}
+              alt="Seleccion de dispositivos NVMe en Broadcom Compatibility Guide filtrando Device Type, Endurance Class y Performance Class."
+            />
+            <figcaption>
+              La seleccion correcta combina compatibilidad, durabilidad, rendimiento y formato fisico.
+            </figcaption>
+          </figure>
         </div>
 
         <div className="lenovoBlock">
