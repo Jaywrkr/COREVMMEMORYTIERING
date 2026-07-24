@@ -17,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
+import nvmeDeviceSelection from "./assets/nvme-device-selection.png";
 import vcenterStatisticsLevels from "./assets/vcenter-statistics-levels.png";
 import "./styles.css";
 
@@ -114,6 +115,24 @@ const nvmeRequirements = [
     label: "Enterprise Mixed Use",
     value: "3 DWPD recomendado",
     tip: "DWPD indica cuantas veces puedes escribir toda la capacidad del disco cada dia durante la garantia.",
+  },
+];
+
+const formFactors = [
+  {
+    label: "2.5 pulgadas",
+    body: "Buena opcion cuando el servidor todavia tiene bahias frontales disponibles.",
+    tip: "Es el formato clasico de muchos SSD empresariales. Facilita reemplazo fisico y mantenimiento.",
+  },
+  {
+    label: "E3.S pluggable",
+    body: "Formato moderno, removible y pensado para densidad en plataformas nuevas.",
+    tip: "E3.S es comun en servidores recientes que buscan mas densidad y mejor flujo de aire que formatos anteriores.",
+  },
+  {
+    label: "M.2",
+    body: "Util cuando las bahias de 2.5 pulgadas ya estan ocupadas.",
+    tip: "M.2 puede ser practico, pero valida siempre endurance, performance y soporte del OEM. No asumas que cualquier M.2 sirve.",
   },
 ];
 
@@ -450,6 +469,39 @@ function App() {
           >
             Abrir Broadcom Compatibility Guide
           </a>
+        </div>
+
+        <div className="selectionBlock">
+          <div className="selectionCopy">
+            <p className="eyebrow">Seleccion del dispositivo</p>
+            <h3>Primero filtra por calidad. Despues elige el formato que calza en tu servidor.</h3>
+            <p>
+              En el Broadcom Compatibility Guide, selecciona <Hint tip="Device Type limita la busqueda a dispositivos NVMe, no SATA, SAS o PCI-E genericos.">Device Type: NVMe</Hint>,{" "}
+              <Hint tip="Endurance Class D equivale a 7300 TBW o mas. Es una senal de durabilidad para cargas con muchas escrituras.">Endurance Class D</Hint> y{" "}
+              <Hint tip="Class F y G agrupan dispositivos con alto volumen de escrituras por segundo.">Performance Class F o G</Hint>. Luego usa filtros como{" "}
+              <Hint tip="Form Factor describe el formato fisico: 2.5 pulgadas, E3.S, M.2 u otros.">Form Factor</Hint> y{" "}
+              <Hint tip="DWPD mide cuantas veces puedes escribir toda la capacidad del disco cada dia durante su garantia.">DWPD</Hint> para escoger el mejor drive para tu ambiente.
+            </p>
+          </div>
+
+          <div className="formFactorGrid">
+            {formFactors.map((factor) => (
+              <article className="formFactorCard" key={factor.label}>
+                <strong><Hint tip={factor.tip}>{factor.label}</Hint></strong>
+                <p>{factor.body}</p>
+              </article>
+            ))}
+          </div>
+
+          <figure className="screenshotFrame">
+            <img
+              src={nvmeDeviceSelection}
+              alt="Seleccion de dispositivos NVMe en Broadcom Compatibility Guide filtrando Device Type, Endurance Class y Performance Class."
+            />
+            <figcaption>
+              La seleccion correcta combina compatibilidad, durabilidad, rendimiento y formato fisico.
+            </figcaption>
+          </figure>
         </div>
 
         <div className="lenovoBlock">

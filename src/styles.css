@@ -756,6 +756,66 @@ input[type="range"] {
   background: #0353e9;
 }
 
+.selectionBlock {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(360px, 1.28fr);
+  gap: 1px;
+  margin-top: 24px;
+  background: #e0e0e0;
+  border: 1px solid #e0e0e0;
+}
+
+.selectionCopy,
+.selectionBlock .screenshotFrame {
+  background: #ffffff;
+}
+
+.selectionCopy {
+  padding: 24px;
+}
+
+.selectionCopy h3 {
+  margin-bottom: 18px;
+  font-size: clamp(1.8rem, 3.5vw, 3.4rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.selectionCopy p {
+  margin-bottom: 0;
+  color: #525252;
+  line-height: 1.58;
+}
+
+.formFactorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-column: 1 / -1;
+  gap: 1px;
+  background: #e0e0e0;
+}
+
+.formFactorCard {
+  min-height: 170px;
+  display: grid;
+  align-content: space-between;
+  gap: 24px;
+  padding: 20px;
+  background: #ffffff;
+  border-top: 4px solid #0f62fe;
+}
+
+.formFactorCard strong {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.formFactorCard p {
+  margin: 0;
+  color: #525252;
+  line-height: 1.5;
+}
+
 .lenovoBlock {
   display: grid;
   grid-template-columns: minmax(280px, 0.72fr) minmax(360px, 1.28fr);
@@ -813,6 +873,8 @@ input[type="range"] {
   .limitGrid,
   .requirementsGrid,
   .copyBlock,
+  .selectionBlock,
+  .formFactorGrid,
   .lenovoBlock {
     grid-template-columns: 1fr;
   }
