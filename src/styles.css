@@ -103,6 +103,65 @@ main {
   color: #78a9ff;
 }
 
+.hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22em;
+  color: inherit;
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+  outline: none;
+}
+
+.hint svg {
+  flex: 0 0 auto;
+  color: #0f62fe;
+}
+
+.hero .hint svg,
+.diagramTier .hint svg {
+  color: #78a9ff;
+}
+
+.hintBubble {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 12px);
+  z-index: 20;
+  width: min(300px, 80vw);
+  padding: 12px 14px;
+  color: #f4f4f4;
+  background: #262626;
+  border: 1px solid #525252;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.26);
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.42;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.hintBubble::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 100%;
+  border: 7px solid transparent;
+  border-top-color: #262626;
+}
+
+.hint:hover .hintBubble,
+.hint:focus .hintBubble,
+.hint:focus-within .hintBubble {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 h1,
 h2,
 h3,
@@ -221,7 +280,11 @@ h1 {
 
 .ruleBand,
 .signals,
-.assessment {
+.assessment,
+.statistics,
+.limitations,
+.software,
+.nvme {
   padding: 80px clamp(16px, 4vw, 64px);
 }
 
@@ -233,8 +296,27 @@ h1 {
   background: #f4f4f4;
 }
 
-.assessment {
+.assessment,
+.software {
   background: #ffffff;
+}
+
+.statistics,
+.nvme {
+  background: #f4f4f4;
+}
+
+.limitations {
+  color: #f4f4f4;
+  background: #161616;
+}
+
+.limitations .eyebrow {
+  color: #78a9ff;
+}
+
+.limitations .sectionHeader {
+  border-top-color: #393939;
 }
 
 .sectionHeader {
@@ -260,7 +342,8 @@ h1 {
 }
 
 .simulator,
-.assessmentGrid {
+.assessmentGrid,
+.riskGrid {
   display: grid;
   grid-template-columns: minmax(280px, 0.76fr) minmax(360px, 1.24fr);
   gap: 1px;
@@ -271,7 +354,8 @@ h1 {
 
 .controlPanel,
 .memoryStack,
-.screenshotFrame {
+.screenshotFrame,
+.riskPanel {
   background: #ffffff;
 }
 
@@ -524,12 +608,212 @@ input[type="range"] {
   line-height: 1.45;
 }
 
+.riskPanel {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 24px;
+  border-left: 4px solid #f1c21b;
+}
+
+.riskPanel svg {
+  color: #f1c21b;
+}
+
+.riskPanel h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 400;
+}
+
+.riskPanel p {
+  margin: 0;
+  color: #393939;
+  line-height: 1.55;
+}
+
+.toolStrip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 1px;
+  background: #e0e0e0;
+  border: 1px solid #e0e0e0;
+  border-top: 0;
+}
+
+.toolStrip article {
+  padding: 24px;
+  background: #ffffff;
+}
+
+.toolStrip h3 {
+  margin-bottom: 12px;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.toolStrip p {
+  margin-bottom: 0;
+  color: #525252;
+  line-height: 1.55;
+}
+
+.limitGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: #393939;
+  border: 1px solid #393939;
+}
+
+.limitCard {
+  min-height: 180px;
+  display: grid;
+  align-content: space-between;
+  gap: 24px;
+  padding: 20px;
+  background: #262626;
+  border-top: 4px solid #fa4d56;
+}
+
+.limitCard svg {
+  color: #fa4d56;
+}
+
+.limitCard p {
+  margin: 0;
+  color: #f4f4f4;
+  line-height: 1.45;
+}
+
+.note {
+  max-width: 980px;
+  margin: 24px 0 0;
+  color: #c6c6c6;
+  line-height: 1.55;
+}
+
+.requirementsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: #e0e0e0;
+  border: 1px solid #e0e0e0;
+}
+
+.requirementCard {
+  min-height: 170px;
+  display: grid;
+  align-content: space-between;
+  gap: 28px;
+  padding: 20px;
+  background: #ffffff;
+}
+
+.requirementCard span {
+  color: #525252;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.requirementCard strong {
+  color: #161616;
+  font-size: clamp(1.45rem, 2.8vw, 2.3rem);
+  font-weight: 300;
+  line-height: 1.05;
+}
+
+.copyBlock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-top: 0;
+}
+
+.copyBlock p {
+  max-width: 1000px;
+  margin: 0;
+  color: #393939;
+  line-height: 1.58;
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 16px;
+  color: #ffffff;
+  background: #0f62fe;
+  font-weight: 600;
+}
+
+.textLink:hover {
+  background: #0353e9;
+}
+
+.lenovoBlock {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(360px, 1.28fr);
+  gap: 1px;
+  margin-top: 24px;
+  background: #e0e0e0;
+  border: 1px solid #e0e0e0;
+}
+
+.lenovoBlock > div,
+.lenovoBlock ul {
+  margin: 0;
+  background: #ffffff;
+}
+
+.lenovoBlock > div {
+  padding: 24px;
+}
+
+.lenovoBlock h3 {
+  margin-bottom: 18px;
+  font-size: clamp(1.8rem, 3.5vw, 3.4rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.lenovoBlock p {
+  margin-bottom: 0;
+  color: #525252;
+  line-height: 1.55;
+}
+
+.lenovoBlock ul {
+  display: grid;
+  gap: 1px;
+  padding: 0;
+  list-style: none;
+  background: #e0e0e0;
+}
+
+.lenovoBlock li {
+  padding: 14px 16px;
+  color: #262626;
+  background: #ffffff;
+  font-weight: 600;
+}
+
 @media (max-width: 920px) {
   .heroGrid,
   .sectionHeader,
   .simulator,
   .assessmentGrid,
-  .signalGrid {
+  .riskGrid,
+  .signalGrid,
+  .limitGrid,
+  .requirementsGrid,
+  .copyBlock,
+  .lenovoBlock {
     grid-template-columns: 1fr;
   }
 
@@ -539,6 +823,10 @@ input[type="range"] {
 
   .heroDiagram {
     max-width: 620px;
+  }
+
+  .toolStrip {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -577,5 +865,10 @@ input[type="range"] {
 
   .tierBar {
     min-height: 118px;
+  }
+
+  .hintBubble {
+    left: auto;
+    right: 0;
   }
 }
