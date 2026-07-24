@@ -1296,3 +1296,456 @@ input[type="range"] {
     right: 0;
   }
 }
+
+/* Decision-lab visual layer: the evidence is the interface, not decoration. */
+:root {
+  background: #f7f8fa;
+}
+
+body {
+  background: #f7f8fa;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 760px;
+  padding-bottom: 76px;
+  background: #0b0f14;
+}
+
+.hero::before {
+  display: none;
+}
+
+.topbar,
+.heroGrid {
+  position: relative;
+  z-index: 1;
+  max-width: 1440px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.topbar {
+  border-bottom-color: #25303b;
+}
+
+.brandMark {
+  background: #0f62fe;
+}
+
+.navAction {
+  border-left-color: #25303b;
+}
+
+.heroGrid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+  gap: clamp(36px, 7vw, 120px);
+}
+
+h1 {
+  max-width: 900px;
+  font-size: clamp(3.1rem, 7vw, 7.5rem);
+  line-height: 0.93;
+}
+
+.hero .lede {
+  max-width: 680px;
+  color: #cbd5e1;
+}
+
+.primaryButton,
+.secondaryButton,
+.textLink {
+  border-radius: 0;
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.primaryButton:hover,
+.textLink:hover {
+  transform: translateY(-2px);
+}
+
+.heroDiagram {
+  align-self: center;
+  box-shadow: 22px 22px 0 #0f62fe;
+  border-color: #344250;
+  background: #344250;
+}
+
+.diagramHeader,
+.diagramTier {
+  background: #111820;
+}
+
+.diagramHeader {
+  padding: 22px;
+}
+
+.diagramTier {
+  min-height: 172px;
+  padding: 24px;
+}
+
+.ruleBand,
+.signals,
+.assessment,
+.statistics,
+.limitations,
+.software,
+.sizing,
+.greenfield,
+.nvme {
+  padding-block: 112px;
+}
+
+.ruleBand,
+.assessment,
+.software,
+.greenfield {
+  background: #f7f8fa;
+}
+
+.signals,
+.statistics,
+.sizing,
+.nvme {
+  background: #e9eef3;
+}
+
+.sectionHeader {
+  max-width: 1440px;
+  margin-inline: auto;
+  grid-template-columns: minmax(180px, 0.52fr) minmax(0, 1.48fr);
+  gap: clamp(24px, 8vw, 130px);
+  padding-top: 20px;
+  border-top-color: #b8c5d1;
+}
+
+.sectionHeader h2 {
+  max-width: 1050px;
+  font-size: clamp(2.45rem, 5vw, 5.2rem);
+  line-height: 0.96;
+}
+
+.simulator,
+.assessmentGrid,
+.riskGrid,
+.sizingGrid,
+.sizingEvidence,
+.greenfieldGrid,
+.selectionBlock,
+.lenovoBlock {
+  max-width: 1440px;
+  margin-inline: auto;
+  border-color: #b8c5d1;
+  background: #b8c5d1;
+  box-shadow: 0 16px 32px rgba(23, 38, 55, 0.08);
+}
+
+.controlPanel,
+.memoryStack,
+.screenshotFrame,
+.riskPanel,
+.sizingPanel,
+.ratioPanel,
+.greenfieldIntro,
+.scenarioCard,
+.selectionCopy,
+.selectionBlock .screenshotFrame,
+.lenovoBlock > div,
+.lenovoBlock ul {
+  background: #ffffff;
+}
+
+.controlPanel,
+.memoryStack,
+.sizingPanel,
+.ratioPanel,
+.greenfieldIntro,
+.selectionCopy,
+.riskPanel {
+  padding: clamp(24px, 3vw, 42px);
+}
+
+.controlPanel label {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #d9e2ea;
+}
+
+input[type="range"] {
+  height: 6px;
+  accent-color: #0f62fe;
+}
+
+.result {
+  padding: 18px;
+  border-left-width: 6px;
+}
+
+.memoryStack {
+  gap: 20px;
+}
+
+.tierBar {
+  min-height: 158px;
+}
+
+.tierBar i {
+  background: #b6e7c9;
+}
+
+.signalGrid,
+.limitGrid,
+.requirementsGrid,
+.greenfieldMath,
+.variableGrid {
+  max-width: 1440px;
+  margin-inline: auto;
+  border-color: #b8c5d1;
+  background: #b8c5d1;
+}
+
+.signalCard {
+  min-height: 310px;
+  padding: 28px;
+  background: #ffffff;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.signalCard:hover,
+.requirementCard:hover,
+.variableCard:hover,
+.formFactorCard:hover {
+  position: relative;
+  z-index: 2;
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(23, 38, 55, 0.14);
+}
+
+.iconBox {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 72px;
+  color: #ffffff;
+  background: #0f62fe;
+}
+
+.pathList li {
+  min-height: 76px;
+  padding-inline: 28px;
+}
+
+.screenshotFrame {
+  border: 0;
+}
+
+.screenshotFrame figcaption {
+  padding: 20px 24px;
+  border-top-color: #d9e2ea;
+}
+
+.evidenceRail {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1.2fr) repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 1px auto 0;
+  background: #b8c5d1;
+  border: 1px solid #b8c5d1;
+}
+
+.evidenceLead,
+.evidenceRail article {
+  padding: 28px;
+  background: #ffffff;
+}
+
+.evidenceLead {
+  color: #ffffff;
+  background: #0f62fe;
+}
+
+.evidenceLead > span,
+.evidenceRail article > span {
+  display: block;
+  margin-bottom: 28px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.evidenceLead p,
+.evidenceRail p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.evidenceRail article strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #0f62fe;
+  font-size: clamp(1.6rem, 3vw, 2.45rem);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.evidenceRail article > span {
+  margin-bottom: 14px;
+  color: #344250;
+}
+
+.evidenceRail article p {
+  color: #52616f;
+}
+
+.statisticsRail .evidenceLead {
+  background: #161616;
+}
+
+.riskPanel {
+  border-left-width: 8px;
+}
+
+.toolStrip {
+  max-width: 1440px;
+  margin: 1px auto 0;
+  border-color: #b8c5d1;
+  background: #b8c5d1;
+}
+
+.toolStrip article {
+  padding: 28px;
+}
+
+.limitations {
+  background: #111820;
+}
+
+.limitGrid {
+  background: #344250;
+  border-color: #344250;
+}
+
+.limitCard {
+  min-height: 205px;
+  padding: 24px;
+  background: #17212b;
+}
+
+.ratioTableWrap {
+  max-width: 1440px;
+  margin: 28px auto 0;
+  border-color: #b8c5d1;
+}
+
+.ratioTable th {
+  background: #dfe7ee;
+}
+
+.ratioTable th,
+.ratioTable td {
+  padding: 20px;
+}
+
+.ratioTable .selectedRow td {
+  background: #dbeafe;
+}
+
+.scenarioCard {
+  padding: clamp(28px, 3vw, 44px);
+}
+
+.greenfieldMath article {
+  padding: 24px;
+}
+
+.requirementCard,
+.variableCard,
+.formFactorCard {
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.requirementsGrid {
+  box-shadow: 0 16px 32px rgba(23, 38, 55, 0.08);
+}
+
+.copyBlock {
+  max-width: 1440px;
+  margin-inline: auto;
+  border-color: #b8c5d1;
+}
+
+.filterJourney {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(300px, 1.2fr) repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 28px auto 0;
+  background: #344250;
+  border: 1px solid #344250;
+}
+
+.filterJourneyLead,
+.filterJourney article {
+  min-height: 244px;
+  padding: 28px;
+  background: #ffffff;
+}
+
+.filterJourneyLead {
+  color: #ffffff;
+  background: #0f62fe;
+}
+
+.filterJourneyLead .eyebrow {
+  color: #cfe0ff;
+}
+
+.filterJourneyLead h3 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.9rem);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.filterJourney article > span {
+  color: #0f62fe;
+  font-family: ui-monospace, monospace;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.filterJourney h4 {
+  margin: 30px 0 12px;
+  font-size: 1.18rem;
+}
+
+.filterJourney p {
+  margin: 0;
+  color: #52616f;
+  line-height: 1.52;
+}
+
+.hintBubble {
+  border-color: #52616f;
+  background: #111820;
+  box-shadow: 0 16px 28px rgba(11, 15, 20, 0.35);
+}
+
+.hintBubble::after {
+  border-top-color: #111820;
+}
+
+@media (max-width: 920px) {
+  .evidenceRail,
+  .filterJourney {
+    grid-template-columns: 1fr;
+  }
+
+  .heroDiagram {
+    box-shadow: 12px 12px 0 #0f62fe;
+  }
+}

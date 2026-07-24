@@ -47,6 +47,60 @@ const assessmentSteps = [
   "En Chart Options, habilitar Active si no aparece en la grafica.",
 ];
 
+const activeMemoryEvidence = [
+  {
+    value: "Real-time",
+    label: "Ventana de observacion",
+    body: "La captura confirma que Active aparece en la vista de rendimiento en tiempo real. No es una metrica historica por defecto.",
+  },
+  {
+    value: "KB",
+    label: "Unidad de la metrica",
+    body: "Active se reporta en KB. Convierte el valor antes de compararlo con la DRAM del host, que normalmente se planifica en GB o TB.",
+  },
+  {
+    value: "125,828",
+    label: "Pico de la captura",
+    body: "El maximo es muy superior al ultimo valor. Una lectura aislada puede ocultar picos; mide durante la carga real del workload.",
+  },
+];
+
+const statisticsEvidence = [
+  {
+    value: "5 min / 1 dia",
+    label: "Detalle inmediato",
+    body: "La captura conserva Level 2 para la ventana corta, donde el diagnostico necesita mayor granularidad.",
+  },
+  {
+    value: "30 min / 1 semana",
+    label: "Detalle semanal",
+    body: "Tambien se mantiene Level 2 para una semana, ampliando el analisis sin elevar todos los intervalos.",
+  },
+  {
+    value: "43 GB",
+    label: "Base de datos estimada",
+    body: "Con 50 hosts y 2,000 VMs, el ejemplo visual estima 43 GB. El incremento de retencion debe presupuestarse.",
+  },
+];
+
+const guideFilters = [
+  {
+    step: "01",
+    title: "Tipo de dispositivo",
+    body: "Parte de NVMe. Evita mezclar la busqueda con SATA, SAS o categorias que no aportan el tier requerido.",
+  },
+  {
+    step: "02",
+    title: "Resistencia y escritura",
+    body: "Aplica Endurance Class D y Performance Class F o G. Son los filtros de aptitud, antes del formato fisico.",
+  },
+  {
+    step: "03",
+    title: "Encaje en el servidor",
+    body: "Solo entonces decide Form Factor y DWPD segun bahias, backplane, OEM y estrategia de redundancia.",
+  },
+];
+
 const compatibilitySignals = [
   {
     icon: Activity,
@@ -433,6 +487,24 @@ function App() {
             </figcaption>
           </figure>
         </div>
+
+        <div className="evidenceRail" aria-label="Lectura de la captura de memoria activa">
+          <div className="evidenceLead">
+            <span>Lectura de la evidencia</span>
+            <p>
+              La grafica no es un adorno: revela que <strong>Active</strong> cambia con el tiempo.
+              Para sizing, no tomes el ultimo punto como respuesta; busca una muestra que incluya
+              horas de carga y picos representativos.
+            </p>
+          </div>
+          {activeMemoryEvidence.map((item) => (
+            <article key={item.label}>
+              <strong>{item.value}</strong>
+              <span>{item.label}</span>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="statistics" aria-labelledby="stats-title">
@@ -477,6 +549,24 @@ function App() {
             <h3><Hint tip="RVTools es una herramienta popular para extraer inventario y metricas de entornos VMware.">RVTools</Hint></h3>
             <p>Tambien recolecta activeness en tiempo real. Incluye periodos ocupados y picos para no subestimar.</p>
           </article>
+        </div>
+
+        <div className="evidenceRail statisticsRail" aria-label="Lectura de la configuracion de estadisticas">
+          <div className="evidenceLead">
+            <span>Lo que cambia al subir el nivel</span>
+            <p>
+              La captura ilustra una estrategia selectiva: mas detalle para los intervalos cortos,
+              retencion mas liviana para los largos. Es una decision de observabilidad y capacidad,
+              no un interruptor inocuo.
+            </p>
+          </div>
+          {statisticsEvidence.map((item) => (
+            <article key={item.label}>
+              <strong>{item.value}</strong>
+              <span>{item.label}</span>
+              <p>{item.body}</p>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -770,6 +860,20 @@ function App() {
               La seleccion correcta combina compatibilidad, durabilidad, rendimiento y formato fisico.
             </figcaption>
           </figure>
+        </div>
+
+        <div className="filterJourney" aria-label="Orden recomendado para filtrar dispositivos NVMe">
+          <div className="filterJourneyLead">
+            <p className="eyebrow">Como leer la guia</p>
+            <h3>Filtrar es una secuencia de decisiones, no una lista de especificaciones.</h3>
+          </div>
+          {guideFilters.map((filter) => (
+            <article key={filter.step}>
+              <span>{filter.step}</span>
+              <h4>{filter.title}</h4>
+              <p>{filter.body}</p>
+            </article>
+          ))}
         </div>
 
         <div className="lenovoBlock">
