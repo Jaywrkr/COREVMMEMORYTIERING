@@ -285,6 +285,7 @@ h1 {
 .limitations,
 .software,
 .sizing,
+.greenfield,
 .nvme {
   padding: 80px clamp(16px, 4vw, 64px);
 }
@@ -306,6 +307,10 @@ h1 {
 .sizing,
 .nvme {
   background: #f4f4f4;
+}
+
+.greenfield {
+  background: #ffffff;
 }
 
 .limitations {
@@ -1056,6 +1061,162 @@ input[type="range"] {
   line-height: 1.08;
 }
 
+.greenfieldGrid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.72fr) minmax(420px, 1.28fr);
+  gap: 1px;
+  background: #e0e0e0;
+  border: 1px solid #e0e0e0;
+}
+
+.greenfieldIntro,
+.scenarioCard {
+  background: #ffffff;
+}
+
+.greenfieldIntro {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 24px;
+}
+
+.greenfieldIntro h3 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3.4vw, 3.2rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.greenfieldIntro p {
+  margin: 0;
+  color: #393939;
+  line-height: 1.58;
+}
+
+.scenarioGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: #e0e0e0;
+}
+
+.scenarioCard {
+  min-height: 360px;
+  display: grid;
+  align-content: space-between;
+  gap: 26px;
+  padding: 24px;
+  border-top: 4px solid #24a148;
+}
+
+.scenarioCard.dark {
+  color: #f4f4f4;
+  background: #262626;
+  border-top-color: #0f62fe;
+}
+
+.scenarioCard span {
+  color: #0f62fe;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.scenarioCard.dark span {
+  color: #78a9ff;
+}
+
+.scenarioCard h3 {
+  margin: 0;
+  font-size: clamp(1.65rem, 3vw, 2.7rem);
+  font-weight: 300;
+  line-height: 1.05;
+}
+
+.scenarioCard p {
+  margin: 0;
+  color: #525252;
+  line-height: 1.55;
+}
+
+.scenarioCard.dark p {
+  color: #c6c6c6;
+}
+
+.scenarioCard strong {
+  color: #198038;
+  font-weight: 600;
+}
+
+.scenarioCard.dark strong {
+  color: #78a9ff;
+}
+
+.greenfieldMath,
+.variableGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: #e0e0e0;
+  border: 1px solid #e0e0e0;
+  border-top: 0;
+}
+
+.greenfieldMath article,
+.variableCard {
+  background: #ffffff;
+}
+
+.greenfieldMath article {
+  min-height: 140px;
+  display: grid;
+  align-content: space-between;
+  gap: 22px;
+  padding: 18px;
+}
+
+.greenfieldMath span {
+  color: #525252;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.greenfieldMath strong {
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.variableGrid {
+  margin-top: 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.variableCard {
+  min-height: 190px;
+  display: grid;
+  align-content: space-between;
+  gap: 24px;
+  padding: 20px;
+  border-top: 4px solid #0f62fe;
+}
+
+.variableCard strong {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.variableCard p {
+  margin: 0;
+  color: #525252;
+  line-height: 1.5;
+}
+
+.note.light {
+  color: #525252;
+}
+
 @media (max-width: 920px) {
   .heroGrid,
   .sectionHeader,
@@ -1070,6 +1231,10 @@ input[type="range"] {
   .formFactorGrid,
   .sizingGrid,
   .sizingEvidence,
+  .greenfieldGrid,
+  .scenarioGrid,
+  .greenfieldMath,
+  .variableGrid,
   .ratioButtons,
   .sizingMetrics,
   .lenovoBlock {
