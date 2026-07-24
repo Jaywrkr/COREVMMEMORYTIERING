@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
 import nvmeDeviceSelection from "./assets/nvme-device-selection.png";
+import nvmeSizingRatios from "./assets/nvme-sizing-ratios.png";
 import vcenterStatisticsLevels from "./assets/vcenter-statistics-levels.png";
 import "./styles.css";
 
@@ -118,6 +119,24 @@ const nvmeRequirements = [
   },
 ];
 
+const ratioOptions = [
+  {
+    value: 1,
+    label: "1:1",
+    description: "Default seguro para la mayoria de workloads evaluados.",
+  },
+  {
+    value: 2,
+    label: "1:2",
+    description: "Usa mas NVMe cuando la memoria activa es baja y consistente.",
+  },
+  {
+    value: 4,
+    label: "1:4",
+    description: "Configuracion avanzada para workloads con actividad muy baja.",
+  },
+];
+
 const formFactors = [
   {
     label: "2.5 pulgadas",
@@ -150,6 +169,7 @@ const lenovoDrives = [
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
+  const [selectedRatio, setSelectedRatio] = useState(1);
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -168,6 +188,25 @@ function App() {
       fitsRecommendedBudget,
     };
   }, [activeMemory, dramCapacity]);
+
+  const sizing = useMemo(() => {
+    const partitionSize = 4096;
+    const ratioRows = ratioOptions.map((ratio) => ({
+      ...ratio,
+      nvmeUsed: Math.min(partitionSize, dramCapacity * ratio.value),
+    }));
+    const currentNvmeUsed = Math.min(partitionSize, dramCapacity * selectedRatio);
+    const suggestedNvmeSize = Math.max(dramCapacity, currentNvmeUsed);
+    const activePercentAfterRatio = Math.round((activeMemory / dramCapacity) * 100);
+
+    return {
+      partitionSize,
+      ratioRows,
+      currentNvmeUsed,
+      suggestedNvmeSize,
+      activePercentAfterRatio,
+    };
+  }, [activeMemory, dramCapacity, selectedRatio]);
 
   return (
     <main>
@@ -437,6 +476,117 @@ function App() {
               <p>{body}</p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="sizing" id="sizing" aria-labelledby="sizing-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Sizing brownfield</p>
+          <h2 id="sizing-title">En infraestructura existente, compra NVMe pensando en el ratio que podrias necesitar despues.</h2>
+        </div>
+
+        <div className="sizingGrid">
+          <div className="sizingPanel">
+            <p>
+              En un despliegue <Hint tip="Brownfield significa adoptar la capacidad en infraestructura existente, no disenar todo desde cero.">brownfield</Hint>, el punto de partida simple es comprar un dispositivo NVMe al menos del mismo tamano que la DRAM del host.
+            </p>
+            <p>
+              La razon es el ratio por defecto <Hint tip="1:1 significa que por cada unidad de DRAM se usa una unidad equivalente de NVMe para Memory Tiering.">DRAM:NVMe 1:1</Hint>. Si un host tiene 1 TB de DRAM, necesitas al menos 1 TB de NVMe para duplicar la memoria disponible.
+            </p>
+            <p>
+              Pero si tus workloads tienen memoria activa muy baja, por ejemplo VDI con 10% activo de forma consistente, puedes planear para ratios avanzados como 1:2 o 1:4.
+            </p>
+          </div>
+
+          <div className="ratioPanel" aria-label="Calculadora de sizing por ratio DRAM a NVMe">
+            <div className="ratioHeader">
+              <span>Ratio activo</span>
+              <strong>1:{selectedRatio}</strong>
+            </div>
+
+            <div className="ratioButtons" role="group" aria-label="Seleccion de ratio DRAM a NVMe">
+              {ratioOptions.map((ratio) => (
+                <button
+                  className={selectedRatio === ratio.value ? "ratioButton active" : "ratioButton"}
+                  key={ratio.label}
+                  type="button"
+                  onClick={() => setSelectedRatio(ratio.value)}
+                >
+                  <span>{ratio.label}</span>
+                  <small>{ratio.description}</small>
+                </button>
+              ))}
+            </div>
+
+            <div className="sizingMetrics">
+              <article>
+                <span>DRAM del host</span>
+                <strong>{dramCapacity} GB</strong>
+              </article>
+              <article>
+                <span>Particion NVMe</span>
+                <strong>{sizing.partitionSize} GB</strong>
+              </article>
+              <article>
+                <span>NVMe usado</span>
+                <strong>{sizing.currentNvmeUsed} GB</strong>
+              </article>
+              <article>
+                <span>Compra minima sugerida</span>
+                <strong>{sizing.suggestedNvmeSize} GB</strong>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div className="ratioTableWrap">
+          <table className="ratioTable">
+            <thead>
+              <tr>
+                <th>DRAM:NVMe</th>
+                <th>DRAM size</th>
+                <th>NVMe partition size</th>
+                <th>NVMe used</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sizing.ratioRows.map((row) => (
+                <tr className={selectedRatio === row.value ? "selectedRow" : ""} key={row.label}>
+                  <td>{row.label}</td>
+                  <td>{dramCapacity} GB</td>
+                  <td>{sizing.partitionSize} GB</td>
+                  <td>{row.nvmeUsed} GB</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p>
+            La particion puede quedar grande desde el inicio. Si compras 4 TB NVMe para un host
+            con 1 TB DRAM, el default 1:1 usara 1 TB. Si luego cambias a 1:2, usara 2 TB sin
+            recrear la particion.
+          </p>
+        </div>
+
+        <div className="sizingEvidence">
+          <article>
+            <AlertTriangle size={22} />
+            <h3>No cambies el ratio sin validar memoria activa.</h3>
+            <p>
+              El ratio DRAM:NVMe es una configuracion avanzada. Antes de subirlo, confirma que
+              la memoria activa de tus workloads cabe en la DRAM disponible. Si no, puedes mover
+              paginas calientes fuera del tier rapido.
+            </p>
+          </article>
+          <figure className="screenshotFrame">
+            <img
+              src={nvmeSizingRatios}
+              alt="Tabla y diagrama de sizing para ratios DRAM a NVMe 1:1, 1:2 y 1:4."
+            />
+            <figcaption>
+              El sizing debe considerar el maximo de particion soportado, los ratios posibles y
+              la actividad real de memoria.
+            </figcaption>
+          </figure>
         </div>
       </section>
 
