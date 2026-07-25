@@ -296,6 +296,22 @@ const reclaimChecks = [
   { id: "ownership", label: "Tengo autorizacion para retirar el dispositivo", detail: "vSAN/local storage y sus consumidores ya fueron evaluados." },
 ];
 
+const deploymentRoutes = {
+  greenfield: [
+    { id: "reclaim", label: "NVMe presente durante VCF", status: "caution", summary: "vSAN puede auto-claimar el NVMe de Memory Tiering.", steps: ["Desplegar VCF primero (Memory Tiering es Day 2).", "Revisar si vSAN auto-claimo el dispositivo.", "Retirar el NVMe de vSAN post-configuracion.", "Limpiar particiones y crear la particion de Memory Tiering.", "Configurar Memory Tiering." ] },
+    { id: "add-later", label: "Agregar NVMe despues de VCF", status: "preferred", summary: "Evitas que vSAN reclame el dispositivo destinado a memoria.", steps: ["Desplegar VCF sin el NVMe de Memory Tiering instalado.", "Agregar o reinstalar el NVMe despues del despliegue.", "Verificar que aparezca como NVMe sin particiones.", "Crear particion y configurar Memory Tiering." ] },
+  ],
+  brownfield: [
+    { id: "manual-vsan", label: "vSAN aun no esta habilitado", status: "preferred", summary: "Excluye el NVMe de memoria antes de crear vSAN.", steps: ["Desactivar vSAN auto-claim.", "Configurar vSAN desde la UI.", "Seleccionar manualmente los dispositivos vSAN.", "Excluir el NVMe de Memory Tiering.", "Crear particion y configurar Memory Tiering." ] },
+    { id: "add-device", label: "vSAN ya esta habilitado", status: "preferred", summary: "El caso mas simple: incorporar un NVMe nuevo y limpio.", steps: ["Instalar el NVMe comprado para Memory Tiering.", "Verificar que el host lo detecte como NVMe.", "Confirmar que no tenga particiones existentes.", "Crear particion y configurar Memory Tiering." ] },
+  ],
+  lab: [
+    { id: "bare-metal", label: "Lab bare metal", status: "preferred", summary: "Aplica las mismas reglas de greenfield o brownfield.", steps: ["Identificar si el lab parte de infraestructura nueva o existente.", "Aplicar la ruta equivalente de produccion.", "Validar NVMe, particiones y configuracion.", "Usar el entorno para practicar antes de produccion." ] },
+    { id: "nested-inner", label: "Nested / ESX interno", status: "lab", summary: "Soportado para laboratorio y aprendizaje, no para expectativas de performance.", steps: ["Crear un virtual disk de tipo NVMe en un datastore.", "Presentarlo a la VM que actua como host ESX interno.", "Configurar Memory Tiering en la capa interna.", "Probar parametros y flujos; no evaluar rendimiento." ] },
+    { id: "nested-outer", label: "Nested / ESX externo", status: "blocked", summary: "No soportado: la capa externa no puede ver la actividad de memoria de la capa interna.", steps: ["No configurar Memory Tiering en el ESX externo para este proposito.", "Usar la capa interna para aprender la configuracion.", "No extrapolar resultados de performance a produccion." ] },
+  ],
+} as const;
+
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
@@ -312,6 +328,8 @@ function App() {
   const [repurposeProgress, setRepurposeProgress] = useState(0);
   const [deploymentMode, setDeploymentMode] = useState<"brownfield" | "greenfield">("brownfield");
   const [reclaimSafety, setReclaimSafety] = useState<Record<string, boolean>>({ capacity: false, data: false, qualified: false, ownership: false });
+  const [deploymentFamily, setDeploymentFamily] = useState<keyof typeof deploymentRoutes>("greenfield");
+  const [deploymentRouteId, setDeploymentRouteId] = useState("reclaim");
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -409,6 +427,7 @@ function App() {
   const activeStorageSource = storageSources.find((source) => source.id === storageSource) ?? storageSources[0];
   const reclaimConfirmed = Object.values(reclaimSafety).filter(Boolean).length;
   const reclaimReady = reclaimConfirmed === reclaimChecks.length;
+  const activeDeploymentRoute = deploymentRoutes[deploymentFamily].find((route) => route.id === deploymentRouteId) ?? deploymentRoutes[deploymentFamily][0];
 
   return (
     <main>
@@ -1230,6 +1249,57 @@ function App() {
             <span>{reclaimConfirmed}/{reclaimChecks.length} condiciones confirmadas</span>
             <strong>{reclaimReady ? "Puedes planificar la recuperacion" : "No recuperes el dispositivo aun"}</strong>
             <p>{reclaimReady ? "Sigue el plan de reasignacion: retirar, limpiar particiones, crear la particion de Memory Tiering y configurar el host." : "La recuperacion no es una forma de crear capacidad gratis. Primero resuelve los riesgos pendientes."}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="deploymentLab" aria-labelledby="deployment-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Parte 5 / Deployment planner</p>
+          <h2 id="deployment-title">Elige la ruta de configuracion que coincide con tu entorno.</h2>
+        </div>
+
+        <div className="deploymentFamilies" role="group" aria-label="Tipo de entorno">
+          {([
+            ["greenfield", "Greenfield", "VCF aun no esta desplegado"],
+            ["brownfield", "Brownfield", "VCF/VVF ya existe"],
+            ["lab", "Lab", "Practica y aprendizaje"],
+          ] as const).map(([id, label, detail]) => (
+            <button
+              className={deploymentFamily === id ? "active" : ""}
+              key={id}
+              type="button"
+              onClick={() => {
+                setDeploymentFamily(id);
+                setDeploymentRouteId(deploymentRoutes[id][0].id);
+              }}
+            >
+              <strong>{label}</strong><span>{detail}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="deploymentPlanner">
+          <div className="routeOptions">
+            <p className="eyebrow">Condicion inicial</p>
+            {deploymentRoutes[deploymentFamily].map((route) => (
+              <button className={deploymentRouteId === route.id ? `routeOption active ${route.status}` : `routeOption ${route.status}`} key={route.id} type="button" onClick={() => setDeploymentRouteId(route.id)}>
+                <span>{route.status === "preferred" ? "Ruta recomendada" : route.status === "caution" ? "Requiere recuperacion" : route.status === "lab" ? "Solo laboratorio" : "No soportado"}</span>
+                <strong>{route.label}</strong>
+                <small>{route.summary}</small>
+              </button>
+            ))}
+          </div>
+          <div className="routeTimeline">
+            <div className="routeTimelineHeader"><span>Plan resultante</span><h3>{activeDeploymentRoute.label}</h3><p>{activeDeploymentRoute.summary}</p></div>
+            <ol>
+              {activeDeploymentRoute.steps.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span><p>{step}</p></li>)}
+            </ol>
+          </div>
+          <div className={`routeVerdict ${activeDeploymentRoute.status}`}>
+            <span>Resultado</span>
+            <strong>{activeDeploymentRoute.status === "preferred" ? "Ruta clara para continuar" : activeDeploymentRoute.status === "caution" ? "Ruta posible, con recuperacion posterior" : activeDeploymentRoute.status === "lab" ? "Util para practicar, no para performance" : "No usar esta capa para Memory Tiering"}</strong>
+            <p>{deploymentFamily === "lab" ? "Un nested host interno puede observar paginas activas, pero el datastore que lo respalda no ofrece la misma caracteristica de rendimiento que un NVMe local real." : "Memory Tiering sigue siendo una operacion Day 2 en VCF 9.0: el dispositivo debe llegar limpio y dedicado antes de su configuracion."}</p>
           </div>
         </div>
       </section>

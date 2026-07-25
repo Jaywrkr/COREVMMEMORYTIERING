@@ -1720,6 +1720,109 @@ input[type="range"] {
   .reclaimMode { grid-template-columns: 1fr; }
 }
 
+/* Deployment route planner */
+.deploymentLab {
+  padding: 112px clamp(16px, 4vw, 64px);
+  background: #ffffff;
+}
+
+.deploymentFamilies {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 auto 1px;
+  background: #b8c5d1;
+}
+
+.deploymentFamilies button {
+  min-height: 105px;
+  display: grid;
+  align-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  color: #344250;
+  text-align: left;
+  border: 0;
+  border-top: 4px solid transparent;
+  background: #f7f8fa;
+  cursor: pointer;
+  font: inherit;
+}
+
+.deploymentFamilies button:hover,
+.deploymentFamilies button.active { border-top-color: #0f62fe; background: #edf5ff; }
+.deploymentFamilies strong { color: #162432; font-size: 1.12rem; font-weight: 500; }
+.deploymentFamilies span { color: #637487; font-size: 0.8rem; }
+
+.deploymentPlanner {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(270px, 0.7fr) minmax(400px, 1.3fr) minmax(260px, 0.7fr);
+  gap: 1px;
+  margin-inline: auto;
+  background: #b8c5d1;
+  border: 1px solid #b8c5d1;
+}
+
+.routeOptions,
+.routeTimeline,
+.routeVerdict { padding: 28px; background: #ffffff; }
+.routeOptions { color: #dbeaf8; background: #0b1825; }
+.routeOptions .eyebrow { color: #72c9ff; }
+
+.routeOption {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  margin-top: 1px;
+  padding: 16px;
+  color: #dbeaf8;
+  text-align: left;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: #122638;
+  cursor: pointer;
+  font: inherit;
+}
+
+.routeOption:hover,
+.routeOption.active { background: #18354c; border-left-color: #72c9ff; }
+.routeOption span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; }
+.routeOption.preferred span { color: #72e0b0; }
+.routeOption.caution span { color: #ffb3b8; }
+.routeOption.lab span { color: #72c9ff; }
+.routeOption.blocked span { color: #ff8389; }
+.routeOption strong { font-size: 0.94rem; font-weight: 600; }
+.routeOption small { color: #a6bdd1; font-size: 0.77rem; line-height: 1.38; }
+
+.routeTimeline { padding: 0; }
+.routeTimelineHeader { padding: 28px; border-bottom: 1px solid #d9e2ea; }
+.routeTimelineHeader > span,
+.routeVerdict > span { color: #637487; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.routeTimelineHeader h3 { margin: 11px 0 9px; color: #162432; font-size: clamp(1.7rem, 3vw, 2.65rem); font-weight: 400; line-height: 1; }
+.routeTimelineHeader p { margin: 0; color: #52616f; line-height: 1.5; }
+.routeTimeline ol { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; background: #d9e2ea; }
+.routeTimeline li { min-height: 64px; display: grid; grid-template-columns: 46px 1fr; align-items: center; gap: 12px; padding: 12px 24px; background: #ffffff; }
+.routeTimeline li span { display: grid; width: 30px; height: 30px; place-items: center; color: #0f62fe; border: 1px solid #0f62fe; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; }
+.routeTimeline li p { margin: 0; color: #344250; line-height: 1.42; }
+
+.routeVerdict { display: grid; align-content: center; gap: 14px; color: #0b5a28; background: #e7f7ed; border-top: 5px solid #198038; }
+.routeVerdict.caution { color: #4d3700; background: #fff8e1; border-top-color: #f1c21b; }
+.routeVerdict.lab { color: #003a6d; background: #e9f2ff; border-top-color: #0f62fe; }
+.routeVerdict.blocked { color: #8a1c21; background: #fff1f1; border-top-color: #fa4d56; }
+.routeVerdict strong { font-size: clamp(1.45rem, 2.8vw, 2.25rem); font-weight: 400; line-height: 1.05; }
+.routeVerdict p { margin: 0; color: #52616f; line-height: 1.52; }
+
+@media (max-width: 920px) {
+  .deploymentPlanner { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .deploymentLab { padding-block: 80px; }
+  .deploymentFamilies { grid-template-columns: 1fr; }
+}
+
 /* Refined composition: use an editorial narrative instead of a stack of equal cards. */
 .hero {
   min-height: 820px;
