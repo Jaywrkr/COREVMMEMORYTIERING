@@ -275,6 +275,20 @@ const vsanScenarios = [
   },
 ];
 
+const storageSources = [
+  { id: "new", label: "NVMe sin asignar", detail: "No tiene datastore ni particiones de otro servicio." },
+  { id: "local", label: "Local datastore", detail: "El NVMe hoy presenta almacenamiento local al host." },
+  { id: "vsan", label: "vSAN", detail: "El NVMe hoy pertenece al almacenamiento distribuido del cluster." },
+];
+
+const repurposeSteps = [
+  "Validar endurance Class D y performance Class F o G.",
+  "Retirar el dispositivo de vSAN o del datastore local.",
+  "Eliminar las particiones que quedaron del uso anterior.",
+  "Crear la particion exclusiva para Memory Tiering.",
+  "Configurar Memory Tiering en el host o cluster.",
+];
+
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
@@ -287,6 +301,8 @@ function App() {
   const [extendedHistory, setExtendedHistory] = useState(false);
   const [greenfieldPath, setGreenfieldPath] = useState<"cost" | "density">("cost");
   const [vsanScenario, setVsanScenario] = useState("dedicated");
+  const [storageSource, setStorageSource] = useState("new");
+  const [repurposeProgress, setRepurposeProgress] = useState(0);
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -381,6 +397,7 @@ function App() {
   const hardwareCompleted = Object.values(hardwareChecks).filter(Boolean).length;
   const hardwareReady = hardwareCompleted === Object.keys(hardwareChecks).length;
   const activeVsanScenario = vsanScenarios.find((scenario) => scenario.id === vsanScenario) ?? vsanScenarios[0];
+  const activeStorageSource = storageSources.find((source) => source.id === storageSource) ?? storageSources[0];
 
   return (
     <main>
@@ -1109,6 +1126,67 @@ function App() {
           <article><strong>Coexisten</strong><p>VMs pueden usar un datastore vSAN y Memory Tiering a la vez, en el mismo cluster.</p></article>
           <article><strong>No compiten</strong><p>El dispositivo de Memory Tiering debe ser fisico o logico dedicado; no se comparte con vSAN ni otros datastores.</p></article>
           <article><strong>Operan por separado</strong><p>La similitud de arquitectura no significa que compartan datos, capas de cifrado o recursos.</p></article>
+        </div>
+      </section>
+
+      <section className="storageLab" aria-labelledby="storage-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Storage considerations</p>
+          <h2 id="storage-title">No compartas el NVMe. Si hace falta, reasignalo correctamente.</h2>
+        </div>
+
+        <div className="storageWorkbench">
+          <div className="sourcePanel">
+            <p className="eyebrow">Origen del dispositivo</p>
+            <h3>De donde viene este NVMe?</h3>
+            <div className="sourceOptions" role="group" aria-label="Origen del dispositivo NVMe">
+              {storageSources.map((source) => (
+                <button
+                  className={storageSource === source.id ? "sourceOption active" : "sourceOption"}
+                  key={source.id}
+                  type="button"
+                  onClick={() => {
+                    setStorageSource(source.id);
+                    setRepurposeProgress(0);
+                  }}
+                >
+                  <strong>{source.label}</strong>
+                  <span>{source.detail}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="repurposeFlow" aria-label="Flujo para reasignar un dispositivo NVMe">
+            <div className="flowHeader">
+              <div><span>Estado actual</span><strong>{activeStorageSource.label}</strong></div>
+              <p>{storageSource === "new" ? "El dispositivo puede entrar directamente al proceso de validacion." : "Puedes reutilizarlo, pero no puede permanecer conectado al uso actual ni conservar particiones previas."}</p>
+            </div>
+            <ol>
+              {repurposeSteps.map((step, index) => {
+                const complete = index < repurposeProgress;
+                const current = index === repurposeProgress;
+                return (
+                  <li className={complete ? "complete" : current ? "current" : ""} key={step}>
+                    <button type="button" onClick={() => setRepurposeProgress(Math.min(index + 1, repurposeSteps.length))}>
+                      <span>{complete ? "OK" : String(index + 1).padStart(2, "0")}</span>
+                      <strong>{step}</strong>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+
+          <div className={repurposeProgress === repurposeSteps.length ? "repurposeResult ready" : "repurposeResult"}>
+            <span>Estado del dispositivo</span>
+            <strong>{repurposeProgress === repurposeSteps.length ? "Listo para Memory Tiering" : repurposeProgress === 0 ? "Aun asignado o sin validar" : "Transicion en curso"}</strong>
+            <p>{repurposeProgress === repurposeSteps.length ? "Ahora es un dispositivo dedicado. No agregues otros datastores ni particiones sobre este recurso." : `Completa ${repurposeSteps.length - repurposeProgress} paso${repurposeSteps.length - repurposeProgress === 1 ? "" : "s"} para usarlo exclusivamente como tier de memoria.`}</p>
+          </div>
+        </div>
+
+        <div className="storageRuleStrip">
+          <span>Produccion</span><strong>Un dispositivo fisico o logico local, dedicado y sin otras particiones.</strong><p>vSAN, NAS, SAN y local datastores pueden alojar VMs; ninguno puede proporcionar el dispositivo de Memory Tiering.</p>
         </div>
       </section>
     </main>
