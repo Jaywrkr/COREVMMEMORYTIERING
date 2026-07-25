@@ -1254,6 +1254,143 @@ input[type="range"] {
   }
 }
 
+.historyPlanner {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(280px, 1.1fr) minmax(250px, 0.75fr) minmax(220px, 0.55fr);
+  gap: 1px;
+  margin: 28px auto 0;
+  color: #edf6ff;
+  background: #32475a;
+  border: 1px solid #32475a;
+}
+
+.historyPlanner > div,
+.historyToggle {
+  min-height: 190px;
+  padding: 26px;
+  background: #0b1825;
+}
+
+.historyPlanner .eyebrow { margin-bottom: 12px; color: #72c9ff; }
+.historyPlanner h3 { margin: 0 0 12px; font-size: clamp(1.55rem, 3vw, 2.4rem); font-weight: 400; line-height: 1.05; }
+.historyPlanner p { margin: 0; color: #a6bdd1; line-height: 1.52; }
+
+.historyToggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #dbeaf8;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.historyToggle input { position: absolute; opacity: 0; pointer-events: none; }
+
+.toggleTrack {
+  width: 48px;
+  height: 26px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  background: #52616f;
+  transition: background-color 150ms ease;
+}
+
+.toggleTrack i {
+  width: 20px;
+  height: 20px;
+  display: block;
+  background: #ffffff;
+  transition: transform 150ms ease;
+}
+
+.historyToggle input:checked + .toggleTrack { background: #198038; }
+.historyToggle input:checked + .toggleTrack i { transform: translateX(22px); }
+.historyToggle:focus-within { outline: 2px solid #72c9ff; outline-offset: -2px; }
+
+.historyOutcome {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  color: #4d3700;
+  background: #fff8e1 !important;
+  border-top: 5px solid #f1c21b;
+}
+
+.historyOutcome.expanded { color: #0f62fe; background: #e9f2ff !important; border-top-color: #0f62fe; }
+.historyOutcome span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.historyOutcome strong { font-size: clamp(2.2rem, 4vw, 3.6rem); font-weight: 300; line-height: 1; }
+.historyOutcome p { color: #52616f; font-size: 0.82rem; }
+
+@media (max-width: 920px) {
+  .historyPlanner { grid-template-columns: 1fr; }
+  .historyPlanner > div,
+  .historyToggle { min-height: auto; }
+}
+
+.scenarioCard {
+  width: 100%;
+  text-align: left;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  cursor: pointer;
+  font: inherit;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.scenarioCard:hover,
+.scenarioCard.selected {
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 0 0 2px #0f62fe;
+}
+
+.scenarioCard.selected::after {
+  content: "Seleccionado";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 5px 8px;
+  color: #ffffff;
+  background: #0f62fe;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.greenfieldDecision {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(170px, 0.35fr) minmax(280px, 0.65fr) minmax(360px, 1fr);
+  gap: 24px;
+  align-items: baseline;
+  margin: 1px auto 0;
+  padding: 24px;
+  color: #eaf3fb;
+  background: #0b1825;
+}
+
+.greenfieldDecision span {
+  color: #72c9ff;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.greenfieldDecision strong { font-size: 1.28rem; font-weight: 400; }
+.greenfieldDecision p { margin: 0; color: #a6bdd1; line-height: 1.5; }
+
+@media (max-width: 920px) {
+  .greenfieldDecision { grid-template-columns: 1fr; gap: 12px; }
+}
+
 /* Refined composition: use an editorial narrative instead of a stack of equal cards. */
 .hero {
   min-height: 820px;

@@ -260,6 +260,8 @@ function App() {
   const [reportCopied, setReportCopied] = useState(false);
   const [evidenceChecks, setEvidenceChecks] = useState({ realtime: false, busyWindow: false, peakRecorded: false });
   const [hardwareChecks, setHardwareChecks] = useState({ nvme: true, endurance: false, performance: false, dwpd: false, oem: false });
+  const [extendedHistory, setExtendedHistory] = useState(false);
+  const [greenfieldPath, setGreenfieldPath] = useState<"cost" | "density">("cost");
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -290,13 +292,13 @@ function App() {
     const peak = Math.max(...samples);
     const warmInDram = Math.min(observed, dramCapacity);
     const coldToNvme = Math.max(0, dramCapacity - warmInDram);
-    const candidate = peak <= dramCapacity / 2;
+    const candidate = peak <= dramCapacity / 2 && selectedProfile !== "latency";
     const line = samples
       .map((sample, index) => `${(index / (samples.length - 1)) * 100},${100 - Math.min(92, (sample / Math.max(dramCapacity, peak)) * 100)}`)
       .join(" ");
 
     return { samples, pointIndex, observed, peak, warmInDram, coldToNvme, candidate, line };
-  }, [activeMemory, dramCapacity, observationPoint]);
+  }, [activeMemory, dramCapacity, observationPoint, selectedProfile]);
 
   const sizing = useMemo(() => {
     const partitionSize = 4096;
@@ -481,7 +483,9 @@ function App() {
             <p>
               {exploration.candidate
                 ? `El pico de ${exploration.peak} GB cabe dentro del presupuesto de ${tiering.dramTierBudget} GB. Aun valida periodos de carga reales.`
-                : `El pico de ${exploration.peak} GB supera el presupuesto de ${tiering.dramTierBudget} GB. Medir mas, aumentar DRAM o excluir este workload.`}
+                : selectedProfile === "latency"
+                  ? "Este perfil es sensible a latencia. Aunque el pico pueda caber, VCF 9.0 no lo trata como candidato inicial para Memory Tiering."
+                  : `El pico de ${exploration.peak} GB supera el presupuesto de ${tiering.dramTierBudget} GB. Medir mas, aumentar DRAM o excluir este workload.`}
             </p>
             <div className="verdictRule"><span>Regla aplicada</span><strong>{exploration.peak} GB / {tiering.dramTierBudget} GB</strong></div>
             <button className="copyAssessment" type="button" onClick={copyAssessment}>
@@ -616,6 +620,24 @@ function App() {
               el consumo de base de datos de vCenter.
             </figcaption>
           </figure>
+        </div>
+
+        <div className="historyPlanner" aria-label="Planificador de retencion de estadisticas">
+          <div>
+            <p className="eyebrow">Decision de observabilidad</p>
+            <h3>Mas historia no es gratis.</h3>
+            <p>Activa el nivel extendido solo cuando necesites estudiar picos fuera de Real-time. La cifra es una referencia del ejemplo mostrado, no una prediccion universal.</p>
+          </div>
+          <label className="historyToggle">
+            <input type="checkbox" checked={extendedHistory} onChange={(event) => setExtendedHistory(event.target.checked)} />
+            <span className="toggleTrack" aria-hidden="true"><i /></span>
+            <span>Conservar detalle Level 2 para 5 min y 30 min</span>
+          </label>
+          <div className={extendedHistory ? "historyOutcome expanded" : "historyOutcome"}>
+            <span>Espacio estimado en el ejemplo</span>
+            <strong>{extendedHistory ? "43 GB" : "16 GB"}</strong>
+            <p>{extendedHistory ? "Tienes mas contexto historico para encontrar picos, con mayor costo de base de datos." : "Menor costo de base de datos, pero menos evidencia historica para sizing."}</p>
+          </div>
         </div>
 
         <div className="toolStrip">
@@ -817,7 +839,7 @@ function App() {
           </article>
 
           <div className="scenarioGrid" aria-label="Comparacion de estrategias greenfield">
-            <article className="scenarioCard">
+            <button className={greenfieldPath === "cost" ? "scenarioCard selected" : "scenarioCard"} type="button" onClick={() => setGreenfieldPath("cost")}>
               <span>Escenario A</span>
               <h3>Reducir DRAM y completar capacidad con NVMe.</h3>
               <p>
@@ -827,9 +849,9 @@ function App() {
               <strong>
                 {greenfield.activeFitsInReducedDram ? "La memoria activa estimada cabe en DRAM." : "Revisa la memoria activa antes de reducir DRAM."}
               </strong>
-            </article>
+            </button>
 
-            <article className="scenarioCard dark">
+            <button className={greenfieldPath === "density" ? "scenarioCard dark selected" : "scenarioCard dark"} type="button" onClick={() => setGreenfieldPath("density")}>
               <span>Escenario B</span>
               <h3>Mantener DRAM y sumar densidad por host.</h3>
               <p>
@@ -837,8 +859,14 @@ function App() {
                 {greenfield.requiredMemory} GB via NVMe. Obtienes {greenfield.denseTotal} GB efectivos por host.
               </p>
               <strong>Menos servidores pueden cubrir el mismo pool de workloads.</strong>
-            </article>
+            </button>
           </div>
+        </div>
+
+        <div className="greenfieldDecision" aria-live="polite">
+          <span>Ruta seleccionada</span>
+          <strong>{greenfieldPath === "cost" ? "Optimizar costo de memoria por host" : "Optimizar densidad y cantidad de servidores"}</strong>
+          <p>{greenfieldPath === "cost" ? `Compra ${greenfield.conservativeDram} GB de DRAM y ${greenfield.conservativeNvme} GB NVMe para llegar a ${greenfield.requiredMemory} GB. Solo es defendible si el pico activo cabe sostenidamente en DRAM.` : `Conserva ${greenfield.requiredMemory} GB DRAM y agrega ${greenfield.requiredMemory} GB NVMe. La inversion busca reducir hosts, energia, enfriamiento y componentes.`}</p>
         </div>
 
         <div className="greenfieldMath">
