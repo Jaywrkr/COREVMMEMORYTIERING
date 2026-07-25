@@ -22,6 +22,7 @@ import nvmeDeviceSelection from "./assets/nvme-device-selection.png";
 import nvmeSizingRatios from "./assets/nvme-sizing-ratios.png";
 import vcenterStatisticsLevels from "./assets/vcenter-statistics-levels.png";
 import configurationProfilesMemoryTiering from "./assets/configuration-profiles-memory-tiering.png";
+import memoryTieringPostConfiguration from "./assets/memory-tiering-post-configuration.png";
 import "./styles.css";
 
 type HintProps = {
@@ -342,6 +343,9 @@ function App() {
   const [configurationProgress, setConfigurationProgress] = useState(0);
   const [partitionTopology, setPartitionTopology] = useState("single");
   const [enableScope, setEnableScope] = useState<"profile" | "selected">("profile");
+  const [rolloutHosts, setRolloutHosts] = useState(4);
+  const [rolloutProgress, setRolloutProgress] = useState(0);
+  const [postChecks, setPostChecks] = useState({ reboot: false, setting: false, monitor: false, capacity: false });
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -444,6 +448,7 @@ function App() {
   const automationReady = Boolean(automationSetup.vcenter.trim() && automationSetup.cluster.trim()) && automationConfirmed === 4;
   const dueDiligenceReady = evidenceCompleted === 3 && hardwareReady && reclaimReady;
   const activePartitionTopology = partitionTopologies.find((topology) => topology.id === partitionTopology) ?? partitionTopologies[0];
+  const postChecksComplete = Object.values(postChecks).filter(Boolean).length;
 
   return (
     <main>
@@ -1441,6 +1446,38 @@ function App() {
             <img src={configurationProfilesMemoryTiering} alt="vSphere Configuration Profiles mostrando memory_tiering true y la opcion Host Overrides." />
             <figcaption><strong>Lo que confirma la captura:</strong> `memory_tiering: true` puede declararse como ajuste común del clúster; <em>Host Overrides</em> permite conservar esa intención sin forzar la misma configuración en todos los hosts.</figcaption>
           </figure>
+        </div>
+
+        <div className="rolloutLab" aria-label="Simulador de rollout y verificacion">
+          <div className="rolloutControls">
+            <p className="eyebrow">Final step / Rolling reboot</p>
+            <h3>El reboot es obligatorio. El servicio no tiene que caerse.</h3>
+            <p>Con Configuration Profiles, vSphere puede aplicar cambios y reiniciar hosts uno por uno mientras migra VMs. Ajusta el tamano del clúster y recorre el rollout.</p>
+            <label><span>Hosts del cluster</span><strong>{rolloutHosts}</strong><input type="range" min="2" max="10" step="1" value={rolloutHosts} onChange={(event) => { setRolloutHosts(Number(event.target.value)); setRolloutProgress(0); }} /></label>
+            <button className="rolloutButton" type="button" onClick={() => setRolloutProgress((current) => current >= rolloutHosts ? 0 : current + 1)}>{rolloutProgress >= rolloutHosts ? "Reiniciar simulacion" : rolloutProgress === 0 ? "Iniciar rollout" : "Completar siguiente host"}<ArrowRight size={16} /></button>
+          </div>
+          <div className="rolloutCanvas">
+            <div className="rolloutCanvasHeader"><span>Estado del cluster</span><strong>{rolloutProgress >= rolloutHosts ? "Todos los hosts verificados" : rolloutProgress === 0 ? "Listo para iniciar" : `Host ${rolloutProgress} en mantenimiento`}</strong></div>
+            <div className="hostRolloutGrid">
+              {Array.from({ length: rolloutHosts }, (_, index) => {
+                const status = index < rolloutProgress ? "complete" : index === rolloutProgress && rolloutProgress < rolloutHosts ? "current" : "waiting";
+                return <article className={`rolloutHost ${status}`} key={index}><span>Host {String(index + 1).padStart(2, "0")}</span><strong>{status === "complete" ? "Reiniciado" : status === "current" ? "Migrando VMs + reboot" : "En espera"}</strong><i /></article>;
+              })}
+            </div>
+            <p className="rolloutNote">La simulacion representa un rolling reboot. La disponibilidad real depende de migracion, capacidad y configuracion del entorno.</p>
+          </div>
+          <div className="verificationEvidence">
+            <figure><img src={memoryTieringPostConfiguration} alt="vCenter mostrando VMkernel.Boot.memoryTiering true y Memory Tiering habilitado en Hardware." /><figcaption>La evidencia post-reboot debe aparecer en Advanced System Settings y Hardware Overview.</figcaption></figure>
+            <div className="postChecklist">
+              {[
+                ["reboot", "Todos los hosts reiniciaron"],
+                ["setting", "VMkernel.Boot.memoryTiering aparece en true"],
+                ["monitor", "Monitor y Hardware muestran Memory Tiering"],
+                ["capacity", "Capacidad de memoria muestra 2x por defecto"],
+              ].map(([key, label]) => <label className={postChecks[key as keyof typeof postChecks] ? "postCheck done" : "postCheck"} key={key}><input type="checkbox" checked={postChecks[key as keyof typeof postChecks]} onChange={(event) => setPostChecks((current) => ({ ...current, [key]: event.target.checked }))} /><span>{label}</span></label>)}
+              <div className={postChecksComplete === 4 ? "postResult ready" : "postResult"}><strong>{postChecksComplete === 4 ? "Configuracion verificada" : `${postChecksComplete}/4 verificaciones`}</strong><p>{postChecksComplete === 4 ? "La capacidad host y cluster debe reflejar la ampliacion de 2x por defecto." : "No des por terminada la implementacion hasta completar las cuatro comprobaciones."}</p></div>
+            </div>
+          </div>
         </div>
       </section>
     </main>
