@@ -449,6 +449,17 @@ function App() {
   const dueDiligenceReady = evidenceCompleted === 3 && hardwareReady && reclaimReady;
   const activePartitionTopology = partitionTopologies.find((topology) => topology.id === partitionTopology) ?? partitionTopologies[0];
   const postChecksComplete = Object.values(postChecks).filter(Boolean).length;
+  const journeyItems = [
+    { id: "simulator", label: "Calificar", ready: exploration.candidate, detail: exploration.candidate ? "Workload candidato" : "Revisar workload" },
+    { id: "assessment", label: "Evidencia", ready: evidenceCompleted === 3, detail: `${evidenceCompleted}/3 validado` },
+    { id: "nvme", label: "Hardware", ready: hardwareReady, detail: `${hardwareCompleted}/5 confirmado` },
+    { id: "reclaim", label: "Recurso", ready: reclaimReady, detail: `${reclaimConfirmed}/4 protegido` },
+    { id: "configuration", label: "Configurar", ready: configurationProgress === 4, detail: `${configurationProgress}/4 runbook` },
+    { id: "rollout", label: "Verificar", ready: postChecksComplete === 4, detail: `${postChecksComplete}/4 post-check` },
+  ];
+  const readyJourneyItems = journeyItems.filter((item) => item.ready).length;
+  const nextJourneyItem = journeyItems.find((item) => !item.ready) ?? journeyItems[journeyItems.length - 1];
+  const goToNextJourneyStep = () => document.getElementById(nextJourneyItem.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <main>
@@ -478,6 +489,24 @@ function App() {
           </div>
         </div>
       </header>
+
+      <section className="journeyConsole" aria-label="Guia viva de implementacion">
+        <div className="journeySummary">
+          <span>Guia viva</span>
+          <strong>{readyJourneyItems}/6 decisiones cerradas</strong>
+          <p>La pagina recuerda lo que ya confirmaste y convierte el siguiente riesgo pendiente en tu siguiente tarea.</p>
+          <button type="button" onClick={goToNextJourneyStep}>Ir a: {nextJourneyItem.label} <ArrowRight size={16} /></button>
+        </div>
+        <div className="journeySteps">
+          {journeyItems.map((item, index) => (
+            <button className={item.ready ? "journeyStep ready" : item.id === nextJourneyItem.id ? "journeyStep next" : "journeyStep"} key={item.id} type="button" onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+              <span>{item.ready ? "OK" : String(index + 1).padStart(2, "0")}</span>
+              <strong>{item.label}</strong>
+              <small>{item.detail}</small>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="ruleBand" id="simulator" aria-labelledby="sim-title">
         <div className="sectionHeader">
@@ -1241,7 +1270,7 @@ function App() {
         </div>
       </section>
 
-      <section className="reclaimLab" aria-labelledby="reclaim-title">
+      <section className="reclaimLab" id="reclaim" aria-labelledby="reclaim-title">
         <div className="sectionHeader">
           <p className="eyebrow">Decision de recuperacion</p>
           <h2 id="reclaim-title">Antes de recuperar un NVMe, prueba que puedes permitirte perderlo.</h2>
@@ -1374,7 +1403,7 @@ function App() {
         </div>
       </section>
 
-      <section className="configurationLab" aria-labelledby="configuration-title">
+      <section className="configurationLab" id="configuration" aria-labelledby="configuration-title">
         <div className="sectionHeader">
           <p className="eyebrow">Configuracion / Runbook</p>
           <h2 id="configuration-title">Dos acciones tecnicas. Cuatro momentos que deben salir bien.</h2>
@@ -1448,7 +1477,7 @@ function App() {
           </figure>
         </div>
 
-        <div className="rolloutLab" aria-label="Simulador de rollout y verificacion">
+        <div className="rolloutLab" id="rollout" aria-label="Simulador de rollout y verificacion">
           <div className="rolloutControls">
             <p className="eyebrow">Final step / Rolling reboot</p>
             <h3>El reboot es obligatorio. El servicio no tiene que caerse.</h3>
