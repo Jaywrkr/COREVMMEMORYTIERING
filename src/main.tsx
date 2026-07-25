@@ -258,6 +258,10 @@ function App() {
   const [selectedProfile, setSelectedProfile] = useState("general");
   const [observationPoint, setObservationPoint] = useState(68);
   const [reportCopied, setReportCopied] = useState(false);
+  const [evidenceChecks, setEvidenceChecks] = useState({ realtime: false, busyWindow: false, peakRecorded: false });
+  const [hardwareChecks, setHardwareChecks] = useState({ nvme: true, endurance: false, performance: false, dwpd: false, oem: false });
+  const [extendedHistory, setExtendedHistory] = useState(false);
+  const [greenfieldPath, setGreenfieldPath] = useState<"cost" | "density">("cost");
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -288,13 +292,13 @@ function App() {
     const peak = Math.max(...samples);
     const warmInDram = Math.min(observed, dramCapacity);
     const coldToNvme = Math.max(0, dramCapacity - warmInDram);
-    const candidate = peak <= dramCapacity / 2;
+    const candidate = peak <= dramCapacity / 2 && selectedProfile !== "latency";
     const line = samples
       .map((sample, index) => `${(index / (samples.length - 1)) * 100},${100 - Math.min(92, (sample / Math.max(dramCapacity, peak)) * 100)}`)
       .join(" ");
 
     return { samples, pointIndex, observed, peak, warmInDram, coldToNvme, candidate, line };
-  }, [activeMemory, dramCapacity, observationPoint]);
+  }, [activeMemory, dramCapacity, observationPoint, selectedProfile]);
 
   const sizing = useMemo(() => {
     const partitionSize = 4096;
@@ -347,6 +351,10 @@ function App() {
     setReportCopied(true);
     window.setTimeout(() => setReportCopied(false), 2200);
   };
+
+  const evidenceCompleted = Object.values(evidenceChecks).filter(Boolean).length;
+  const hardwareCompleted = Object.values(hardwareChecks).filter(Boolean).length;
+  const hardwareReady = hardwareCompleted === Object.keys(hardwareChecks).length;
 
   return (
     <main>
@@ -475,7 +483,9 @@ function App() {
             <p>
               {exploration.candidate
                 ? `El pico de ${exploration.peak} GB cabe dentro del presupuesto de ${tiering.dramTierBudget} GB. Aun valida periodos de carga reales.`
-                : `El pico de ${exploration.peak} GB supera el presupuesto de ${tiering.dramTierBudget} GB. Medir mas, aumentar DRAM o excluir este workload.`}
+                : selectedProfile === "latency"
+                  ? "Este perfil es sensible a latencia. Aunque el pico pueda caber, VCF 9.0 no lo trata como candidato inicial para Memory Tiering."
+                  : `El pico de ${exploration.peak} GB supera el presupuesto de ${tiering.dramTierBudget} GB. Medir mas, aumentar DRAM o excluir este workload.`}
             </p>
             <div className="verdictRule"><span>Regla aplicada</span><strong>{exploration.peak} GB / {tiering.dramTierBudget} GB</strong></div>
             <button className="copyAssessment" type="button" onClick={copyAssessment}>
@@ -548,6 +558,35 @@ function App() {
             </article>
           ))}
         </div>
+
+        <div className="evidenceGate" aria-label="Checklist de evidencia para sizing">
+          <div className="gateIntro">
+            <p className="eyebrow">Gate 01 / Evidencia</p>
+            <h3>No avances a sizing hasta cerrar esta evidencia.</h3>
+            <p>Marca solo lo que ya verificaste en tu entorno. El objetivo es evitar que una muestra bonita se convierta en una compra equivocada.</p>
+          </div>
+          <div className="checklist">
+            {[
+              ["realtime", "Vi Active en Real-time", "La metrica aparece en la VM correcta y en KB."],
+              ["busyWindow", "Inclui una ventana ocupada", "La muestra cubre carga real, no solo un momento tranquilo."],
+              ["peakRecorded", "Registre el pico", "Tengo un valor maximo para comparar contra 50% de DRAM."],
+            ].map(([key, label, description]) => (
+              <label className={evidenceChecks[key as keyof typeof evidenceChecks] ? "checkItem done" : "checkItem"} key={key}>
+                <input
+                  type="checkbox"
+                  checked={evidenceChecks[key as keyof typeof evidenceChecks]}
+                  onChange={(event) => setEvidenceChecks((current) => ({ ...current, [key]: event.target.checked }))}
+                />
+                <span><strong>{label}</strong><small>{description}</small></span>
+              </label>
+            ))}
+          </div>
+          <div className={evidenceCompleted === 3 ? "gateResult ready" : "gateResult"}>
+            <span>{evidenceCompleted}/3 verificado</span>
+            <strong>{evidenceCompleted === 3 ? "Evidencia lista para dimensionar" : "Aun no hay evidencia suficiente"}</strong>
+            <p>{evidenceCompleted === 3 ? "Lleva el pico al Workbench y prueba ratios en el siguiente paso." : "Completa los puntos pendientes antes de usar el resultado del Workbench como recomendacion."}</p>
+          </div>
+        </div>
       </section>
 
       <section className="statistics" aria-labelledby="stats-title">
@@ -581,6 +620,24 @@ function App() {
               el consumo de base de datos de vCenter.
             </figcaption>
           </figure>
+        </div>
+
+        <div className="historyPlanner" aria-label="Planificador de retencion de estadisticas">
+          <div>
+            <p className="eyebrow">Decision de observabilidad</p>
+            <h3>Mas historia no es gratis.</h3>
+            <p>Activa el nivel extendido solo cuando necesites estudiar picos fuera de Real-time. La cifra es una referencia del ejemplo mostrado, no una prediccion universal.</p>
+          </div>
+          <label className="historyToggle">
+            <input type="checkbox" checked={extendedHistory} onChange={(event) => setExtendedHistory(event.target.checked)} />
+            <span className="toggleTrack" aria-hidden="true"><i /></span>
+            <span>Conservar detalle Level 2 para 5 min y 30 min</span>
+          </label>
+          <div className={extendedHistory ? "historyOutcome expanded" : "historyOutcome"}>
+            <span>Espacio estimado en el ejemplo</span>
+            <strong>{extendedHistory ? "43 GB" : "16 GB"}</strong>
+            <p>{extendedHistory ? "Tienes mas contexto historico para encontrar picos, con mayor costo de base de datos." : "Menor costo de base de datos, pero menos evidencia historica para sizing."}</p>
+          </div>
         </div>
 
         <div className="toolStrip">
@@ -782,7 +839,7 @@ function App() {
           </article>
 
           <div className="scenarioGrid" aria-label="Comparacion de estrategias greenfield">
-            <article className="scenarioCard">
+            <button className={greenfieldPath === "cost" ? "scenarioCard selected" : "scenarioCard"} type="button" onClick={() => setGreenfieldPath("cost")}>
               <span>Escenario A</span>
               <h3>Reducir DRAM y completar capacidad con NVMe.</h3>
               <p>
@@ -792,9 +849,9 @@ function App() {
               <strong>
                 {greenfield.activeFitsInReducedDram ? "La memoria activa estimada cabe en DRAM." : "Revisa la memoria activa antes de reducir DRAM."}
               </strong>
-            </article>
+            </button>
 
-            <article className="scenarioCard dark">
+            <button className={greenfieldPath === "density" ? "scenarioCard dark selected" : "scenarioCard dark"} type="button" onClick={() => setGreenfieldPath("density")}>
               <span>Escenario B</span>
               <h3>Mantener DRAM y sumar densidad por host.</h3>
               <p>
@@ -802,8 +859,14 @@ function App() {
                 {greenfield.requiredMemory} GB via NVMe. Obtienes {greenfield.denseTotal} GB efectivos por host.
               </p>
               <strong>Menos servidores pueden cubrir el mismo pool de workloads.</strong>
-            </article>
+            </button>
           </div>
+        </div>
+
+        <div className="greenfieldDecision" aria-live="polite">
+          <span>Ruta seleccionada</span>
+          <strong>{greenfieldPath === "cost" ? "Optimizar costo de memoria por host" : "Optimizar densidad y cantidad de servidores"}</strong>
+          <p>{greenfieldPath === "cost" ? `Compra ${greenfield.conservativeDram} GB de DRAM y ${greenfield.conservativeNvme} GB NVMe para llegar a ${greenfield.requiredMemory} GB. Solo es defendible si el pico activo cabe sostenidamente en DRAM.` : `Conserva ${greenfield.requiredMemory} GB DRAM y agrega ${greenfield.requiredMemory} GB NVMe. La inversion busca reducir hosts, energia, enfriamiento y componentes.`}</p>
         </div>
 
         <div className="greenfieldMath">
@@ -854,6 +917,37 @@ function App() {
               <strong>{requirement.value}</strong>
             </article>
           ))}
+        </div>
+
+        <div className="hardwareGate" aria-label="Validador de requisitos de hardware">
+          <div className="gateIntro">
+            <p className="eyebrow">Gate 03 / Hardware</p>
+            <h3>Califica el dispositivo antes de aprobar la compra.</h3>
+            <p>Usa este filtro como una lista de salida. Una respuesta pendiente no es una aprobacion: es una investigacion pendiente.</p>
+          </div>
+          <div className="hardwareChecklist">
+            {[
+              ["nvme", "El dispositivo es NVMe"],
+              ["endurance", "Endurance Class D o 7300 TBW+"],
+              ["performance", "Performance Class F o G"],
+              ["dwpd", "Mixed Use con 3 DWPD+ si no hay clase"],
+              ["oem", "Validado en Broadcom / OEM"],
+            ].map(([key, label]) => (
+              <label className={hardwareChecks[key as keyof typeof hardwareChecks] ? "hardwareCheck done" : "hardwareCheck"} key={key}>
+                <input
+                  type="checkbox"
+                  checked={hardwareChecks[key as keyof typeof hardwareChecks]}
+                  onChange={(event) => setHardwareChecks((current) => ({ ...current, [key]: event.target.checked }))}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+          <div className={hardwareReady ? "gateResult ready" : "gateResult"}>
+            <span>{hardwareCompleted}/5 confirmado</span>
+            <strong>{hardwareReady ? "Especificacion lista para compra" : "No aprobar el dispositivo todavia"}</strong>
+            <p>{hardwareReady ? "El drive supera los criterios tecnicos iniciales. Confirma capacidad y formato fisico con el servidor." : "Usa la guia de compatibilidad para cerrar las condiciones pendientes."}</p>
+          </div>
         </div>
 
         <div className="copyBlock">

@@ -1254,6 +1254,143 @@ input[type="range"] {
   }
 }
 
+.historyPlanner {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(280px, 1.1fr) minmax(250px, 0.75fr) minmax(220px, 0.55fr);
+  gap: 1px;
+  margin: 28px auto 0;
+  color: #edf6ff;
+  background: #32475a;
+  border: 1px solid #32475a;
+}
+
+.historyPlanner > div,
+.historyToggle {
+  min-height: 190px;
+  padding: 26px;
+  background: #0b1825;
+}
+
+.historyPlanner .eyebrow { margin-bottom: 12px; color: #72c9ff; }
+.historyPlanner h3 { margin: 0 0 12px; font-size: clamp(1.55rem, 3vw, 2.4rem); font-weight: 400; line-height: 1.05; }
+.historyPlanner p { margin: 0; color: #a6bdd1; line-height: 1.52; }
+
+.historyToggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #dbeaf8;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.historyToggle input { position: absolute; opacity: 0; pointer-events: none; }
+
+.toggleTrack {
+  width: 48px;
+  height: 26px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  background: #52616f;
+  transition: background-color 150ms ease;
+}
+
+.toggleTrack i {
+  width: 20px;
+  height: 20px;
+  display: block;
+  background: #ffffff;
+  transition: transform 150ms ease;
+}
+
+.historyToggle input:checked + .toggleTrack { background: #198038; }
+.historyToggle input:checked + .toggleTrack i { transform: translateX(22px); }
+.historyToggle:focus-within { outline: 2px solid #72c9ff; outline-offset: -2px; }
+
+.historyOutcome {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  color: #4d3700;
+  background: #fff8e1 !important;
+  border-top: 5px solid #f1c21b;
+}
+
+.historyOutcome.expanded { color: #0f62fe; background: #e9f2ff !important; border-top-color: #0f62fe; }
+.historyOutcome span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.historyOutcome strong { font-size: clamp(2.2rem, 4vw, 3.6rem); font-weight: 300; line-height: 1; }
+.historyOutcome p { color: #52616f; font-size: 0.82rem; }
+
+@media (max-width: 920px) {
+  .historyPlanner { grid-template-columns: 1fr; }
+  .historyPlanner > div,
+  .historyToggle { min-height: auto; }
+}
+
+.scenarioCard {
+  width: 100%;
+  text-align: left;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  cursor: pointer;
+  font: inherit;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.scenarioCard:hover,
+.scenarioCard.selected {
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 0 0 2px #0f62fe;
+}
+
+.scenarioCard.selected::after {
+  content: "Seleccionado";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 5px 8px;
+  color: #ffffff;
+  background: #0f62fe;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.greenfieldDecision {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(170px, 0.35fr) minmax(280px, 0.65fr) minmax(360px, 1fr);
+  gap: 24px;
+  align-items: baseline;
+  margin: 1px auto 0;
+  padding: 24px;
+  color: #eaf3fb;
+  background: #0b1825;
+}
+
+.greenfieldDecision span {
+  color: #72c9ff;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.greenfieldDecision strong { font-size: 1.28rem; font-weight: 400; }
+.greenfieldDecision p { margin: 0; color: #a6bdd1; line-height: 1.5; }
+
+@media (max-width: 920px) {
+  .greenfieldDecision { grid-template-columns: 1fr; gap: 12px; }
+}
+
 /* Refined composition: use an editorial narrative instead of a stack of equal cards. */
 .hero {
   min-height: 820px;
@@ -1654,6 +1791,112 @@ input[type="range"] {
   .nvme {
     padding-block: 80px;
   }
+}
+
+/* Decision gates turn supporting content into progress through the workflow. */
+.evidenceGate,
+.hardwareGate {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(320px, 1.08fr) minmax(260px, 0.76fr);
+  gap: 1px;
+  margin: 28px auto 0;
+  background: #b8c5d1;
+  border: 1px solid #b8c5d1;
+}
+
+.gateIntro,
+.checklist,
+.hardwareChecklist,
+.gateResult {
+  padding: 28px;
+  background: #ffffff;
+}
+
+.gateIntro {
+  color: #eaf3fb;
+  background: #0b1825;
+}
+
+.gateIntro .eyebrow { color: #72c9ff; }
+.gateIntro h3 { margin: 0 0 18px; font-size: clamp(1.65rem, 3vw, 2.6rem); font-weight: 400; line-height: 1.05; }
+.gateIntro p:last-child { margin: 0; color: #a6bdd1; line-height: 1.55; }
+
+.checklist,
+.hardwareChecklist {
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  padding: 0;
+  background: #d9e2ea;
+}
+
+.checkItem,
+.hardwareCheck {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.hardwareCheck { min-height: 58px; }
+
+.checkItem:hover,
+.hardwareCheck:hover { background: #f3f7fb; }
+.checkItem.done,
+.hardwareCheck.done { background: #e7f7ed; }
+
+.checkItem input,
+.hardwareCheck input {
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  accent-color: #198038;
+}
+
+.checkItem span { display: grid; gap: 5px; }
+.checkItem strong,
+.hardwareCheck span { color: #162432; font-size: 0.92rem; font-weight: 600; }
+.checkItem small { color: #637487; font-size: 0.8rem; line-height: 1.4; }
+
+.gateResult {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  color: #4d3700;
+  background: #fff8e1;
+  border-top: 5px solid #f1c21b;
+}
+
+.gateResult.ready {
+  color: #0b5a28;
+  background: #e7f7ed;
+  border-top-color: #198038;
+}
+
+.gateResult span {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gateResult strong { font-size: clamp(1.35rem, 2.5vw, 2rem); font-weight: 400; line-height: 1.05; }
+.gateResult p { margin: 0; color: #52616f; font-size: 0.88rem; line-height: 1.55; }
+
+.hardwareGate { margin-top: 28px; }
+.hardwareGate .gateIntro { background: #0f62fe; }
+.hardwareGate .gateIntro .eyebrow { color: #dbeafe; }
+.hardwareGate .gateIntro p:last-child { color: #dbeafe; }
+
+@media (max-width: 920px) {
+  .evidenceGate,
+  .hardwareGate { grid-template-columns: 1fr; }
 }
 
 /* Interactive decision studio */
