@@ -21,6 +21,8 @@ import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
 import nvmeDeviceSelection from "./assets/nvme-device-selection.png";
 import nvmeSizingRatios from "./assets/nvme-sizing-ratios.png";
 import vcenterStatisticsLevels from "./assets/vcenter-statistics-levels.png";
+import configurationProfilesMemoryTiering from "./assets/configuration-profiles-memory-tiering.png";
+import memoryTieringPostConfiguration from "./assets/memory-tiering-post-configuration.png";
 import "./styles.css";
 
 type HintProps = {
@@ -296,6 +298,28 @@ const reclaimChecks = [
   { id: "ownership", label: "Tengo autorizacion para retirar el dispositivo", detail: "vSAN/local storage y sus consumidores ya fueron evaluados." },
 ];
 
+const deploymentRoutes = {
+  greenfield: [
+    { id: "reclaim", label: "NVMe presente durante VCF", status: "caution", summary: "vSAN puede auto-claimar el NVMe de Memory Tiering.", steps: ["Desplegar VCF primero (Memory Tiering es Day 2).", "Revisar si vSAN auto-claimo el dispositivo.", "Retirar el NVMe de vSAN post-configuracion.", "Limpiar particiones y crear la particion de Memory Tiering.", "Configurar Memory Tiering." ] },
+    { id: "add-later", label: "Agregar NVMe despues de VCF", status: "preferred", summary: "Evitas que vSAN reclame el dispositivo destinado a memoria.", steps: ["Desplegar VCF sin el NVMe de Memory Tiering instalado.", "Agregar o reinstalar el NVMe despues del despliegue.", "Verificar que aparezca como NVMe sin particiones.", "Crear particion y configurar Memory Tiering." ] },
+  ],
+  brownfield: [
+    { id: "manual-vsan", label: "vSAN aun no esta habilitado", status: "preferred", summary: "Excluye el NVMe de memoria antes de crear vSAN.", steps: ["Desactivar vSAN auto-claim.", "Configurar vSAN desde la UI.", "Seleccionar manualmente los dispositivos vSAN.", "Excluir el NVMe de Memory Tiering.", "Crear particion y configurar Memory Tiering." ] },
+    { id: "add-device", label: "vSAN ya esta habilitado", status: "preferred", summary: "El caso mas simple: incorporar un NVMe nuevo y limpio.", steps: ["Instalar el NVMe comprado para Memory Tiering.", "Verificar que el host lo detecte como NVMe.", "Confirmar que no tenga particiones existentes.", "Crear particion y configurar Memory Tiering." ] },
+  ],
+  lab: [
+    { id: "bare-metal", label: "Lab bare metal", status: "preferred", summary: "Aplica las mismas reglas de greenfield o brownfield.", steps: ["Identificar si el lab parte de infraestructura nueva o existente.", "Aplicar la ruta equivalente de produccion.", "Validar NVMe, particiones y configuracion.", "Usar el entorno para practicar antes de produccion." ] },
+    { id: "nested-inner", label: "Nested / ESX interno", status: "lab", summary: "Soportado para laboratorio y aprendizaje, no para expectativas de performance.", steps: ["Crear un virtual disk de tipo NVMe en un datastore.", "Presentarlo a la VM que actua como host ESX interno.", "Configurar Memory Tiering en la capa interna.", "Probar parametros y flujos; no evaluar rendimiento." ] },
+    { id: "nested-outer", label: "Nested / ESX externo", status: "blocked", summary: "No soportado: la capa externa no puede ver la actividad de memoria de la capa interna.", steps: ["No configurar Memory Tiering en el ESX externo para este proposito.", "Usar la capa interna para aprender la configuracion.", "No extrapolar resultados de performance a produccion." ] },
+  ],
+} as const;
+
+const partitionTopologies = [
+  { id: "single", label: "Un NVMe por host", status: "supported", title: "Topologia simple y valida", body: "Crea una particion en el unico dispositivo NVMe dedicado por host." },
+  { id: "raid", label: "RAID por hardware", status: "supported", title: "Un dispositivo logico dedicado", body: "El controlador presenta un unico dispositivo logico. La redundancia pertenece a la capa RAID, no a Memory Tiering." },
+  { id: "two-standalone", label: "Dos NVMe sin RAID", status: "blocked", title: "No aporta redundancia ni capacidad", body: "VCF 9.0 puede permitir crear ambas particiones, pero monta solo un drive de forma no deterministica al arrancar. El segundo se ignora." },
+];
+
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
@@ -312,6 +336,16 @@ function App() {
   const [repurposeProgress, setRepurposeProgress] = useState(0);
   const [deploymentMode, setDeploymentMode] = useState<"brownfield" | "greenfield">("brownfield");
   const [reclaimSafety, setReclaimSafety] = useState<Record<string, boolean>>({ capacity: false, data: false, qualified: false, ownership: false });
+  const [deploymentFamily, setDeploymentFamily] = useState<keyof typeof deploymentRoutes>("greenfield");
+  const [deploymentRouteId, setDeploymentRouteId] = useState("reclaim");
+  const [automationSetup, setAutomationSetup] = useState({ vcenter: "", cluster: "" });
+  const [automationChecks, setAutomationChecks] = useState({ command: false, disk: false, clean: false, lab: false });
+  const [configurationProgress, setConfigurationProgress] = useState(0);
+  const [partitionTopology, setPartitionTopology] = useState("single");
+  const [enableScope, setEnableScope] = useState<"profile" | "selected">("profile");
+  const [rolloutHosts, setRolloutHosts] = useState(4);
+  const [rolloutProgress, setRolloutProgress] = useState(0);
+  const [postChecks, setPostChecks] = useState({ reboot: false, setting: false, monitor: false, capacity: false });
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -409,6 +443,12 @@ function App() {
   const activeStorageSource = storageSources.find((source) => source.id === storageSource) ?? storageSources[0];
   const reclaimConfirmed = Object.values(reclaimSafety).filter(Boolean).length;
   const reclaimReady = reclaimConfirmed === reclaimChecks.length;
+  const activeDeploymentRoute = deploymentRoutes[deploymentFamily].find((route) => route.id === deploymentRouteId) ?? deploymentRoutes[deploymentFamily][0];
+  const automationConfirmed = Object.values(automationChecks).filter(Boolean).length;
+  const automationReady = Boolean(automationSetup.vcenter.trim() && automationSetup.cluster.trim()) && automationConfirmed === 4;
+  const dueDiligenceReady = evidenceCompleted === 3 && hardwareReady && reclaimReady;
+  const activePartitionTopology = partitionTopologies.find((topology) => topology.id === partitionTopology) ?? partitionTopologies[0];
+  const postChecksComplete = Object.values(postChecks).filter(Boolean).length;
 
   return (
     <main>
@@ -1230,6 +1270,213 @@ function App() {
             <span>{reclaimConfirmed}/{reclaimChecks.length} condiciones confirmadas</span>
             <strong>{reclaimReady ? "Puedes planificar la recuperacion" : "No recuperes el dispositivo aun"}</strong>
             <p>{reclaimReady ? "Sigue el plan de reasignacion: retirar, limpiar particiones, crear la particion de Memory Tiering y configurar el host." : "La recuperacion no es una forma de crear capacidad gratis. Primero resuelve los riesgos pendientes."}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="deploymentLab" aria-labelledby="deployment-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Parte 5 / Deployment planner</p>
+          <h2 id="deployment-title">Elige la ruta de configuracion que coincide con tu entorno.</h2>
+        </div>
+
+        <div className="deploymentFamilies" role="group" aria-label="Tipo de entorno">
+          {([
+            ["greenfield", "Greenfield", "VCF aun no esta desplegado"],
+            ["brownfield", "Brownfield", "VCF/VVF ya existe"],
+            ["lab", "Lab", "Practica y aprendizaje"],
+          ] as const).map(([id, label, detail]) => (
+            <button
+              className={deploymentFamily === id ? "active" : ""}
+              key={id}
+              type="button"
+              onClick={() => {
+                setDeploymentFamily(id);
+                setDeploymentRouteId(deploymentRoutes[id][0].id);
+              }}
+            >
+              <strong>{label}</strong><span>{detail}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="deploymentPlanner">
+          <div className="routeOptions">
+            <p className="eyebrow">Condicion inicial</p>
+            {deploymentRoutes[deploymentFamily].map((route) => (
+              <button className={deploymentRouteId === route.id ? `routeOption active ${route.status}` : `routeOption ${route.status}`} key={route.id} type="button" onClick={() => setDeploymentRouteId(route.id)}>
+                <span>{route.status === "preferred" ? "Ruta recomendada" : route.status === "caution" ? "Requiere recuperacion" : route.status === "lab" ? "Solo laboratorio" : "No soportado"}</span>
+                <strong>{route.label}</strong>
+                <small>{route.summary}</small>
+              </button>
+            ))}
+          </div>
+          <div className="routeTimeline">
+            <div className="routeTimelineHeader"><span>Plan resultante</span><h3>{activeDeploymentRoute.label}</h3><p>{activeDeploymentRoute.summary}</p></div>
+            <ol>
+              {activeDeploymentRoute.steps.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span><p>{step}</p></li>)}
+            </ol>
+          </div>
+          <div className={`routeVerdict ${activeDeploymentRoute.status}`}>
+            <span>Resultado</span>
+            <strong>{activeDeploymentRoute.status === "preferred" ? "Ruta clara para continuar" : activeDeploymentRoute.status === "caution" ? "Ruta posible, con recuperacion posterior" : activeDeploymentRoute.status === "lab" ? "Util para practicar, no para performance" : "No usar esta capa para Memory Tiering"}</strong>
+            <p>{deploymentFamily === "lab" ? "Un nested host interno puede observar paginas activas, pero el datastore que lo respalda no ofrece la misma caracteristica de rendimiento que un NVMe local real." : "Memory Tiering sigue siendo una operacion Day 2 en VCF 9.0: el dispositivo debe llegar limpio y dedicado antes de su configuracion."}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="automationLab" aria-labelledby="automation-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Automatizacion / Preflight</p>
+          <h2 id="automation-title">Prepara una automatizacion segura antes de tocar un solo disco.</h2>
+        </div>
+
+        <div className="automationWarning">
+          <AlertTriangle size={22} />
+          <p>El ejemplo de PowerCLI compartido usa un comando de ESXCLI hipotetico. Sirve para entender el flujo de automatizacion, <strong>no</strong> como comando de produccion. Valida el comando o API real antes de ejecutarlo.</p>
+        </div>
+
+        <div className="automationWorkbench">
+          <div className="automationInputs">
+            <p className="eyebrow">Variables de entorno</p>
+            <h3>Define el alcance, no las credenciales.</h3>
+            <label><span>vCenter FQDN o IP</span><input value={automationSetup.vcenter} onChange={(event) => setAutomationSetup((current) => ({ ...current, vcenter: event.target.value }))} placeholder="vcenter.example.local" /></label>
+            <label><span>Nombre de cluster</span><input value={automationSetup.cluster} onChange={(event) => setAutomationSetup((current) => ({ ...current, cluster: event.target.value }))} placeholder="cluster-produccion" /></label>
+            <p className="inputNote">Las credenciales deben pedirse de forma segura al ejecutar PowerCLI. Esta herramienta no recopila ni almacena secretos.</p>
+          </div>
+          <div className="automationFlow">
+            <div className="automationFlowHeader"><span>Flujo que debe revisar el script</span><strong>Conectar → inventariar → seleccionar → confirmar → configurar → desconectar</strong></div>
+            <div className="automationStages">
+              <article><span>01</span><strong>Inventario</strong><p>Enumera discos NVMe por host, con canonical name, modelo y capacidad.</p></article>
+              <article><span>02</span><strong>Seleccion</strong><p>La eleccion debe hacerse por host; no asumas que el primer NVMe es el correcto.</p></article>
+              <article><span>03</span><strong>Confirmacion</strong><p>La operacion puede borrar datos. Debe requerir confirmacion explicita.</p></article>
+              <article><span>04</span><strong>Resultado</strong><p>Registra exito o fallo host por host y desconecta de vCenter al terminar.</p></article>
+            </div>
+          </div>
+          <div className="automationChecks">
+            {[
+              ["command", "Valide el comando o API real", "El comando del ejemplo es un placeholder."],
+              ["disk", "Revise el disco seleccionado por host", "Canonical name y modelo coinciden con el plan."],
+              ["clean", "Confirme particiones limpias", "El script no las borra por ti."],
+              ["lab", "Pruebe primero fuera de produccion", "Automatizar no reemplaza una prueba controlada."],
+            ].map(([key, label, detail]) => (
+              <label className={automationChecks[key as keyof typeof automationChecks] ? "automationCheck done" : "automationCheck"} key={key}>
+                <input type="checkbox" checked={automationChecks[key as keyof typeof automationChecks]} onChange={(event) => setAutomationChecks((current) => ({ ...current, [key]: event.target.checked }))} />
+                <span><strong>{label}</strong><small>{detail}</small></span>
+              </label>
+            ))}
+          </div>
+          <div className={automationReady ? "automationVerdict ready" : "automationVerdict"}>
+            <span>Estado de preflight</span>
+            <strong>{automationReady ? "Listo para una prueba controlada" : "No ejecutar automatizacion aun"}</strong>
+            <p>{automationReady ? `Alcance definido: ${automationSetup.vcenter} / ${automationSetup.cluster}. Usa un entorno de prueba y el comando real validado.` : "Completa el alcance y los cuatro controles. Una automatizacion incompleta puede seleccionar o borrar el dispositivo equivocado."}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="configurationLab" aria-labelledby="configuration-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Configuracion / Runbook</p>
+          <h2 id="configuration-title">Dos acciones tecnicas. Cuatro momentos que deben salir bien.</h2>
+        </div>
+
+        <div className="configurationIntro">
+          <div><span>Principio</span><strong>La configuracion es corta; la preparacion y la validacion son lo que la hacen segura.</strong></div>
+          <a className="textLink" href="https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-0/vsphere-resource-management/memory-tiering-over-nvme/memory-tiering-configuration.html" target="_blank" rel="noreferrer">Abrir guia oficial de Broadcom <ArrowRight size={17} /></a>
+        </div>
+
+        <div className="configurationRunbook">
+          {[
+            { title: "Preflight", tag: "Antes", technical: false, body: "Confirma evidencia de memoria activa, un NVMe dedicado y la estrategia de recuperacion de capacidad.", action: dueDiligenceReady ? "Gates previos completados" : "Completa los gates de evidencia, hardware y recuperacion" },
+            { title: "Crear particion", tag: "Paso tecnico 1", technical: true, body: "Crea la particion exclusiva de Memory Tiering en el NVMe local o logico limpio.", action: "Usa ESXCLI, PowerCLI o el proceso validado para tu entorno" },
+            { title: "Habilitar Memory Tiering", tag: "Paso tecnico 2", technical: true, body: "Configura la funcion en el host o cluster segun la guia oficial y tu estrategia de cambios.", action: "Aplica el metodo aprobado para tu version de VCF/VVF" },
+            { title: "Validar", tag: "Despues", technical: false, body: "Confirma capacidad adicional, estado de configuracion y que las metricas se comporten como se esperaba.", action: "Registra el resultado y observa cargas representativas" },
+          ].map((step, index) => {
+            const complete = index < configurationProgress;
+            const current = index === configurationProgress;
+            return (
+              <article className={complete ? "configStep complete" : current ? "configStep current" : "configStep"} key={step.title}>
+                <button type="button" onClick={() => setConfigurationProgress(Math.min(index + 1, 4))}>
+                  <span>{complete ? "OK" : String(index + 1).padStart(2, "0")}</span>
+                  <div><small>{step.tag}</small><h3>{step.title}</h3><p>{step.body}</p><strong>{step.action}</strong></div>
+                  {step.technical && <i>Accion tecnica</i>}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className={configurationProgress === 4 ? "configurationOutcome ready" : "configurationOutcome"}>
+          <span>Estado del runbook</span>
+          <strong>{configurationProgress === 4 ? "Implementacion lista para seguimiento" : `${configurationProgress}/4 momentos revisados`}</strong>
+          <p>{configurationProgress === 4 ? "La configuracion no termina al habilitar la funcion. Usa la observacion posterior para comprobar que la decision de diseño sigue siendo valida." : "Avanza por el runbook en orden. Los dos pasos tecnicos no sustituyen la preparacion ni la comprobacion posterior."}</p>
+        </div>
+
+        <div className="partitionLab" aria-label="Comprobador de topologia de particion">
+          <div className="partitionTopologyPicker">
+            <p className="eyebrow">Topologia de particion</p>
+            <h3>Un host monta un solo dispositivo para Memory Tiering.</h3>
+            {partitionTopologies.map((topology) => (
+              <button className={partitionTopology === topology.id ? `topologyOption active ${topology.status}` : `topologyOption ${topology.status}`} key={topology.id} type="button" onClick={() => setPartitionTopology(topology.id)}>
+                <span>{topology.status === "supported" ? "Valido" : "No usar para redundancia"}</span><strong>{topology.label}</strong>
+              </button>
+            ))}
+          </div>
+          <div className={activePartitionTopology.status === "supported" ? "topologyResult supported" : "topologyResult blocked"}>
+            <div className="deviceSketch">
+              <span className="hostSketch">Host</span>
+              <div className="deviceRow">
+                <i className="deviceUnit">NVMe</i>
+                {partitionTopology !== "single" && <i className="deviceUnit">NVMe</i>}
+              </div>
+              <b>{partitionTopology === "two-standalone" ? "Solo uno se montara" : "Un dispositivo logico para Memory Tiering"}</b>
+            </div>
+            <div><span>Resultado</span><h3>{activePartitionTopology.title}</h3><p>{activePartitionTopology.body}</p></div>
+          </div>
+        </div>
+
+        <div className="hostScopeLab">
+          <div><p className="eyebrow">Alcance de habilitacion</p><h3>No todos los hosts tienen que participar.</h3><p>Selecciona una estrategia. La configuracion puede aplicarse por host o por clúster, con excepciones para workloads no aptos.</p></div>
+          <div className="scopeOptions" role="group" aria-label="Estrategia de habilitacion">
+            <button className={enableScope === "profile" ? "active" : ""} type="button" onClick={() => setEnableScope("profile")}><span>Recomendado</span><strong>Configuration Profiles + host overrides</strong><p>Habilita de forma consistente y excluye hosts con excepciones.</p></button>
+            <button className={enableScope === "selected" ? "active" : ""} type="button" onClick={() => setEnableScope("selected")}><span>Alternativa</span><strong>Hosts seleccionados</strong><p>Activa solo en hosts específicos cuando el diseño lo requiere.</p></button>
+          </div>
+          <div className="scopeResult"><span>Plan seleccionado</span><strong>{enableScope === "profile" ? "Configuracion coherente con excepciones controladas" : "Habilitacion selectiva por host"}</strong><p>{enableScope === "profile" ? "Usa overrides para no habilitar Memory Tiering donde haya VMs con limitaciones de compatibilidad." : "Documenta qué hosts se excluyen y por qué, para evitar una configuración desigual sin intención."}</p></div>
+          <figure className="profileEvidence">
+            <img src={configurationProfilesMemoryTiering} alt="vSphere Configuration Profiles mostrando memory_tiering true y la opcion Host Overrides." />
+            <figcaption><strong>Lo que confirma la captura:</strong> `memory_tiering: true` puede declararse como ajuste común del clúster; <em>Host Overrides</em> permite conservar esa intención sin forzar la misma configuración en todos los hosts.</figcaption>
+          </figure>
+        </div>
+
+        <div className="rolloutLab" aria-label="Simulador de rollout y verificacion">
+          <div className="rolloutControls">
+            <p className="eyebrow">Final step / Rolling reboot</p>
+            <h3>El reboot es obligatorio. El servicio no tiene que caerse.</h3>
+            <p>Con Configuration Profiles, vSphere puede aplicar cambios y reiniciar hosts uno por uno mientras migra VMs. Ajusta el tamano del clúster y recorre el rollout.</p>
+            <label><span>Hosts del cluster</span><strong>{rolloutHosts}</strong><input type="range" min="2" max="10" step="1" value={rolloutHosts} onChange={(event) => { setRolloutHosts(Number(event.target.value)); setRolloutProgress(0); }} /></label>
+            <button className="rolloutButton" type="button" onClick={() => setRolloutProgress((current) => current >= rolloutHosts ? 0 : current + 1)}>{rolloutProgress >= rolloutHosts ? "Reiniciar simulacion" : rolloutProgress === 0 ? "Iniciar rollout" : "Completar siguiente host"}<ArrowRight size={16} /></button>
+          </div>
+          <div className="rolloutCanvas">
+            <div className="rolloutCanvasHeader"><span>Estado del cluster</span><strong>{rolloutProgress >= rolloutHosts ? "Todos los hosts verificados" : rolloutProgress === 0 ? "Listo para iniciar" : `Host ${rolloutProgress} en mantenimiento`}</strong></div>
+            <div className="hostRolloutGrid">
+              {Array.from({ length: rolloutHosts }, (_, index) => {
+                const status = index < rolloutProgress ? "complete" : index === rolloutProgress && rolloutProgress < rolloutHosts ? "current" : "waiting";
+                return <article className={`rolloutHost ${status}`} key={index}><span>Host {String(index + 1).padStart(2, "0")}</span><strong>{status === "complete" ? "Reiniciado" : status === "current" ? "Migrando VMs + reboot" : "En espera"}</strong><i /></article>;
+              })}
+            </div>
+            <p className="rolloutNote">La simulacion representa un rolling reboot. La disponibilidad real depende de migracion, capacidad y configuracion del entorno.</p>
+          </div>
+          <div className="verificationEvidence">
+            <figure><img src={memoryTieringPostConfiguration} alt="vCenter mostrando VMkernel.Boot.memoryTiering true y Memory Tiering habilitado en Hardware." /><figcaption>La evidencia post-reboot debe aparecer en Advanced System Settings y Hardware Overview.</figcaption></figure>
+            <div className="postChecklist">
+              {[
+                ["reboot", "Todos los hosts reiniciaron"],
+                ["setting", "VMkernel.Boot.memoryTiering aparece en true"],
+                ["monitor", "Monitor y Hardware muestran Memory Tiering"],
+                ["capacity", "Capacidad de memoria muestra 2x por defecto"],
+              ].map(([key, label]) => <label className={postChecks[key as keyof typeof postChecks] ? "postCheck done" : "postCheck"} key={key}><input type="checkbox" checked={postChecks[key as keyof typeof postChecks]} onChange={(event) => setPostChecks((current) => ({ ...current, [key]: event.target.checked }))} /><span>{label}</span></label>)}
+              <div className={postChecksComplete === 4 ? "postResult ready" : "postResult"}><strong>{postChecksComplete === 4 ? "Configuracion verificada" : `${postChecksComplete}/4 verificaciones`}</strong><p>{postChecksComplete === 4 ? "La capacidad host y cluster debe reflejar la ampliacion de 2x por defecto." : "No des por terminada la implementacion hasta completar las cuatro comprobaciones."}</p></div>
+            </div>
           </div>
         </div>
       </section>
