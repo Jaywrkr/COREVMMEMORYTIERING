@@ -330,6 +330,8 @@ function App() {
   const [reclaimSafety, setReclaimSafety] = useState<Record<string, boolean>>({ capacity: false, data: false, qualified: false, ownership: false });
   const [deploymentFamily, setDeploymentFamily] = useState<keyof typeof deploymentRoutes>("greenfield");
   const [deploymentRouteId, setDeploymentRouteId] = useState("reclaim");
+  const [automationSetup, setAutomationSetup] = useState({ vcenter: "", cluster: "" });
+  const [automationChecks, setAutomationChecks] = useState({ command: false, disk: false, clean: false, lab: false });
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -428,6 +430,8 @@ function App() {
   const reclaimConfirmed = Object.values(reclaimSafety).filter(Boolean).length;
   const reclaimReady = reclaimConfirmed === reclaimChecks.length;
   const activeDeploymentRoute = deploymentRoutes[deploymentFamily].find((route) => route.id === deploymentRouteId) ?? deploymentRoutes[deploymentFamily][0];
+  const automationConfirmed = Object.values(automationChecks).filter(Boolean).length;
+  const automationReady = Boolean(automationSetup.vcenter.trim() && automationSetup.cluster.trim()) && automationConfirmed === 4;
 
   return (
     <main>
@@ -1300,6 +1304,55 @@ function App() {
             <span>Resultado</span>
             <strong>{activeDeploymentRoute.status === "preferred" ? "Ruta clara para continuar" : activeDeploymentRoute.status === "caution" ? "Ruta posible, con recuperacion posterior" : activeDeploymentRoute.status === "lab" ? "Util para practicar, no para performance" : "No usar esta capa para Memory Tiering"}</strong>
             <p>{deploymentFamily === "lab" ? "Un nested host interno puede observar paginas activas, pero el datastore que lo respalda no ofrece la misma caracteristica de rendimiento que un NVMe local real." : "Memory Tiering sigue siendo una operacion Day 2 en VCF 9.0: el dispositivo debe llegar limpio y dedicado antes de su configuracion."}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="automationLab" aria-labelledby="automation-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Automatizacion / Preflight</p>
+          <h2 id="automation-title">Prepara una automatizacion segura antes de tocar un solo disco.</h2>
+        </div>
+
+        <div className="automationWarning">
+          <AlertTriangle size={22} />
+          <p>El ejemplo de PowerCLI compartido usa un comando de ESXCLI hipotetico. Sirve para entender el flujo de automatizacion, <strong>no</strong> como comando de produccion. Valida el comando o API real antes de ejecutarlo.</p>
+        </div>
+
+        <div className="automationWorkbench">
+          <div className="automationInputs">
+            <p className="eyebrow">Variables de entorno</p>
+            <h3>Define el alcance, no las credenciales.</h3>
+            <label><span>vCenter FQDN o IP</span><input value={automationSetup.vcenter} onChange={(event) => setAutomationSetup((current) => ({ ...current, vcenter: event.target.value }))} placeholder="vcenter.example.local" /></label>
+            <label><span>Nombre de cluster</span><input value={automationSetup.cluster} onChange={(event) => setAutomationSetup((current) => ({ ...current, cluster: event.target.value }))} placeholder="cluster-produccion" /></label>
+            <p className="inputNote">Las credenciales deben pedirse de forma segura al ejecutar PowerCLI. Esta herramienta no recopila ni almacena secretos.</p>
+          </div>
+          <div className="automationFlow">
+            <div className="automationFlowHeader"><span>Flujo que debe revisar el script</span><strong>Conectar → inventariar → seleccionar → confirmar → configurar → desconectar</strong></div>
+            <div className="automationStages">
+              <article><span>01</span><strong>Inventario</strong><p>Enumera discos NVMe por host, con canonical name, modelo y capacidad.</p></article>
+              <article><span>02</span><strong>Seleccion</strong><p>La eleccion debe hacerse por host; no asumas que el primer NVMe es el correcto.</p></article>
+              <article><span>03</span><strong>Confirmacion</strong><p>La operacion puede borrar datos. Debe requerir confirmacion explicita.</p></article>
+              <article><span>04</span><strong>Resultado</strong><p>Registra exito o fallo host por host y desconecta de vCenter al terminar.</p></article>
+            </div>
+          </div>
+          <div className="automationChecks">
+            {[
+              ["command", "Valide el comando o API real", "El comando del ejemplo es un placeholder."],
+              ["disk", "Revise el disco seleccionado por host", "Canonical name y modelo coinciden con el plan."],
+              ["clean", "Confirme particiones limpias", "El script no las borra por ti."],
+              ["lab", "Pruebe primero fuera de produccion", "Automatizar no reemplaza una prueba controlada."],
+            ].map(([key, label, detail]) => (
+              <label className={automationChecks[key as keyof typeof automationChecks] ? "automationCheck done" : "automationCheck"} key={key}>
+                <input type="checkbox" checked={automationChecks[key as keyof typeof automationChecks]} onChange={(event) => setAutomationChecks((current) => ({ ...current, [key]: event.target.checked }))} />
+                <span><strong>{label}</strong><small>{detail}</small></span>
+              </label>
+            ))}
+          </div>
+          <div className={automationReady ? "automationVerdict ready" : "automationVerdict"}>
+            <span>Estado de preflight</span>
+            <strong>{automationReady ? "Listo para una prueba controlada" : "No ejecutar automatizacion aun"}</strong>
+            <p>{automationReady ? `Alcance definido: ${automationSetup.vcenter} / ${automationSetup.cluster}. Usa un entorno de prueba y el comando real validado.` : "Completa el alcance y los cuatro controles. Una automatizacion incompleta puede seleccionar o borrar el dispositivo equivocado."}</p>
           </div>
         </div>
       </section>
