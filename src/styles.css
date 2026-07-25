@@ -1903,6 +1903,83 @@ input[type="range"] {
   .automationChecks { grid-template-columns: 1fr; }
 }
 
+/* High-level configuration runbook */
+.configurationLab {
+  padding: 112px clamp(16px, 4vw, 64px);
+  background: #07111d;
+  color: #edf6ff;
+}
+
+.configurationLab .sectionHeader { border-top-color: #32475a; }
+.configurationLab .eyebrow { color: #72c9ff; }
+
+.configurationIntro {
+  max-width: 1440px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 auto 28px;
+  padding: 24px;
+  background: #122638;
+}
+
+.configurationIntro > div { display: grid; gap: 8px; }
+.configurationIntro span { color: #72c9ff; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.configurationIntro strong { max-width: 760px; font-size: clamp(1.22rem, 2.5vw, 1.75rem); font-weight: 400; line-height: 1.2; }
+.configurationIntro .textLink { flex: 0 0 auto; justify-content: center; }
+
+.configurationRunbook {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-inline: auto;
+  background: #32475a;
+}
+
+.configStep { min-height: 355px; background: #0b1825; border-top: 5px solid transparent; }
+.configStep.current { border-top-color: #0f62fe; background: #122638; }
+.configStep.complete { border-top-color: #198038; background: #102d22; }
+.configStep button { width: 100%; min-height: 350px; display: grid; grid-template-columns: 42px 1fr; align-content: start; gap: 18px 14px; padding: 24px; color: inherit; text-align: left; border: 0; background: transparent; cursor: pointer; font: inherit; }
+.configStep button:hover { background: rgba(255, 255, 255, 0.035); }
+.configStep button > span { display: grid; width: 32px; height: 32px; place-items: center; color: #72c9ff; border: 1px solid #72c9ff; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; }
+.configStep.complete button > span { color: #ffffff; border-color: #198038; background: #198038; }
+.configStep small { color: #a6bdd1; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.67rem; font-weight: 700; text-transform: uppercase; }
+.configStep h3 { margin: 10px 0 12px; font-size: clamp(1.5rem, 2.8vw, 2.25rem); font-weight: 400; line-height: 1; }
+.configStep p { margin: 0 0 22px; color: #c5d6e7; line-height: 1.52; }
+.configStep strong { color: #72c9ff; font-size: 0.84rem; line-height: 1.45; }
+.configStep i { grid-column: 1 / -1; width: max-content; padding: 5px 7px; color: #0b1825; background: #72c9ff; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.65rem; font-style: normal; font-weight: 700; text-transform: uppercase; }
+
+.configurationOutcome {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(160px, 0.35fr) minmax(280px, 0.65fr) minmax(360px, 1fr);
+  gap: 24px;
+  align-items: baseline;
+  margin: 1px auto 0;
+  padding: 24px;
+  color: #4d3700;
+  background: #fff8e1;
+  border-top: 5px solid #f1c21b;
+}
+
+.configurationOutcome.ready { color: #0b5a28; background: #e7f7ed; border-top-color: #198038; }
+.configurationOutcome span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.configurationOutcome strong { font-size: 1.35rem; font-weight: 400; }
+.configurationOutcome p { margin: 0; color: #52616f; line-height: 1.5; }
+
+@media (max-width: 920px) {
+  .configurationRunbook { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .configurationOutcome { grid-template-columns: 1fr; gap: 12px; }
+}
+
+@media (max-width: 620px) {
+  .configurationLab { padding-block: 80px; }
+  .configurationIntro,
+  .configurationRunbook { display: grid; grid-template-columns: 1fr; }
+}
+
 /* Refined composition: use an editorial narrative instead of a stack of equal cards. */
 .hero {
   min-height: 820px;

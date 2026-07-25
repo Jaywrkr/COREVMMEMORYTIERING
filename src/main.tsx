@@ -332,6 +332,7 @@ function App() {
   const [deploymentRouteId, setDeploymentRouteId] = useState("reclaim");
   const [automationSetup, setAutomationSetup] = useState({ vcenter: "", cluster: "" });
   const [automationChecks, setAutomationChecks] = useState({ command: false, disk: false, clean: false, lab: false });
+  const [configurationProgress, setConfigurationProgress] = useState(0);
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -432,6 +433,7 @@ function App() {
   const activeDeploymentRoute = deploymentRoutes[deploymentFamily].find((route) => route.id === deploymentRouteId) ?? deploymentRoutes[deploymentFamily][0];
   const automationConfirmed = Object.values(automationChecks).filter(Boolean).length;
   const automationReady = Boolean(automationSetup.vcenter.trim() && automationSetup.cluster.trim()) && automationConfirmed === 4;
+  const dueDiligenceReady = evidenceCompleted === 3 && hardwareReady && reclaimReady;
 
   return (
     <main>
@@ -1354,6 +1356,45 @@ function App() {
             <strong>{automationReady ? "Listo para una prueba controlada" : "No ejecutar automatizacion aun"}</strong>
             <p>{automationReady ? `Alcance definido: ${automationSetup.vcenter} / ${automationSetup.cluster}. Usa un entorno de prueba y el comando real validado.` : "Completa el alcance y los cuatro controles. Una automatizacion incompleta puede seleccionar o borrar el dispositivo equivocado."}</p>
           </div>
+        </div>
+      </section>
+
+      <section className="configurationLab" aria-labelledby="configuration-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Configuracion / Runbook</p>
+          <h2 id="configuration-title">Dos acciones tecnicas. Cuatro momentos que deben salir bien.</h2>
+        </div>
+
+        <div className="configurationIntro">
+          <div><span>Principio</span><strong>La configuracion es corta; la preparacion y la validacion son lo que la hacen segura.</strong></div>
+          <a className="textLink" href="https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere/9-0/vsphere-resource-management/memory-tiering-over-nvme/memory-tiering-configuration.html" target="_blank" rel="noreferrer">Abrir guia oficial de Broadcom <ArrowRight size={17} /></a>
+        </div>
+
+        <div className="configurationRunbook">
+          {[
+            { title: "Preflight", tag: "Antes", technical: false, body: "Confirma evidencia de memoria activa, un NVMe dedicado y la estrategia de recuperacion de capacidad.", action: dueDiligenceReady ? "Gates previos completados" : "Completa los gates de evidencia, hardware y recuperacion" },
+            { title: "Crear particion", tag: "Paso tecnico 1", technical: true, body: "Crea la particion exclusiva de Memory Tiering en el NVMe local o logico limpio.", action: "Usa ESXCLI, PowerCLI o el proceso validado para tu entorno" },
+            { title: "Habilitar Memory Tiering", tag: "Paso tecnico 2", technical: true, body: "Configura la funcion en el host o cluster segun la guia oficial y tu estrategia de cambios.", action: "Aplica el metodo aprobado para tu version de VCF/VVF" },
+            { title: "Validar", tag: "Despues", technical: false, body: "Confirma capacidad adicional, estado de configuracion y que las metricas se comporten como se esperaba.", action: "Registra el resultado y observa cargas representativas" },
+          ].map((step, index) => {
+            const complete = index < configurationProgress;
+            const current = index === configurationProgress;
+            return (
+              <article className={complete ? "configStep complete" : current ? "configStep current" : "configStep"} key={step.title}>
+                <button type="button" onClick={() => setConfigurationProgress(Math.min(index + 1, 4))}>
+                  <span>{complete ? "OK" : String(index + 1).padStart(2, "0")}</span>
+                  <div><small>{step.tag}</small><h3>{step.title}</h3><p>{step.body}</p><strong>{step.action}</strong></div>
+                  {step.technical && <i>Accion tecnica</i>}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className={configurationProgress === 4 ? "configurationOutcome ready" : "configurationOutcome"}>
+          <span>Estado del runbook</span>
+          <strong>{configurationProgress === 4 ? "Implementacion lista para seguimiento" : `${configurationProgress}/4 momentos revisados`}</strong>
+          <p>{configurationProgress === 4 ? "La configuracion no termina al habilitar la funcion. Usa la observacion posterior para comprobar que la decision de diseño sigue siendo valida." : "Avanza por el runbook en orden. Los dos pasos tecnicos no sustituyen la preparacion ni la comprobacion posterior."}</p>
         </div>
       </section>
     </main>
