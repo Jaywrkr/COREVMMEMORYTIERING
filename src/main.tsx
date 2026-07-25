@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  Copy,
   Database,
   Gauge,
   HardDrive,
@@ -20,7 +21,6 @@ import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
 import nvmeDeviceSelection from "./assets/nvme-device-selection.png";
 import nvmeSizingRatios from "./assets/nvme-sizing-ratios.png";
 import vcenterStatisticsLevels from "./assets/vcenter-statistics-levels.png";
-import memoryTieringHero from "./assets/memory-tiering-hero.png";
 import "./styles.css";
 
 type HintProps = {
@@ -257,6 +257,7 @@ function App() {
   const [selectedRatio, setSelectedRatio] = useState(1);
   const [selectedProfile, setSelectedProfile] = useState("general");
   const [observationPoint, setObservationPoint] = useState(68);
+  const [reportCopied, setReportCopied] = useState(false);
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -332,63 +333,55 @@ function App() {
     };
   }, []);
 
+  const copyAssessment = async () => {
+    const summary = [
+      "NVMe Memory Tiering - diagnostico inicial",
+      `Perfil: ${workloadProfiles.find((profile) => profile.id === selectedProfile)?.label ?? "Personalizado"}`,
+      `DRAM del host: ${dramCapacity} GB`,
+      `Pico de memoria activa: ${exploration.peak} GB`,
+      `Umbral recomendado (50% DRAM): ${tiering.dramTierBudget} GB`,
+      `Resultado: ${exploration.candidate ? "Candidato inicial; validar en periodos de carga reales." : "No activar aun; medir mas, aumentar DRAM o excluir el workload."}`,
+    ].join("\n");
+
+    await navigator.clipboard.writeText(summary);
+    setReportCopied(true);
+    window.setTimeout(() => setReportCopied(false), 2200);
+  };
+
   return (
     <main>
-      <section className="hero" aria-labelledby="hero-title">
+      <header className="appHeader" id="top" aria-labelledby="hero-title">
         <nav className="topbar" aria-label="Principal">
           <a className="brand" href="#top" aria-label="Inicio">
             <span className="brandMark" />
             <span>CORE VM Memory Tiering</span>
           </a>
           <div className="topbarLinks">
-            <a href="#assessment">01 Medir</a>
-            <a href="#sizing">02 Dimensionar</a>
-            <a href="#nvme">03 Seleccionar</a>
+            <span className="liveIndicator">Laboratorio interactivo</span>
+            <a href="#assessment">Evidencia</a>
+            <a href="#sizing">Sizing</a>
+            <a href="#nvme">Hardware</a>
           </div>
         </nav>
-
-        <div className="heroGrid">
-          <div className="heroContent">
-            <p className="eyebrow">VCF 9 - Parte 1</p>
-            <h1 id="hero-title">
-              Antes de activar <Hint tip="NVMe Memory Tiering usa dispositivos NVMe como un segundo nivel de memoria para paginas frias.">NVMe Memory Tiering</Hint>, mide la memoria activa.
-            </h1>
-            <p className="lede">
-              La pregunta inicial no es si NVMe puede ampliar la capacidad. La pregunta es si
-              el workload mantiene su <Hint tip="Memoria caliente es la memoria que la aplicacion consulta o modifica con frecuencia.">memoria caliente</Hint> dentro de <Hint tip="DRAM es la memoria principal del host. Es mucho mas rapida que NVMe y debe absorber lo activo.">DRAM</Hint>.
-            </p>
-            <div className="heroProof" aria-label="Resumen de decision">
-              <span><b>01</b> Observa Active en carga real</span>
-              <span><b>02</b> Valida que quepa en DRAM</span>
-              <span><b>03</b> Dimensiona el NVMe</span>
-            </div>
-            <div className="heroActions">
-              <a className="primaryButton" href="#simulator">
-                <span>Probar regla 50%</span>
-                <ArrowRight size={18} />
-              </a>
-              <a className="secondaryButton" href="#assessment">
-                Ver ruta en vCenter
-              </a>
-            </div>
+        <div className="appTitlebar">
+          <div>
+            <p className="eyebrow">VCF 9 / Memory Tiering</p>
+            <h1 id="hero-title">Memory Tiering Workbench</h1>
+            <p>Construye una recomendacion con tus datos. No asumas que mas capacidad equivale a un workload apto.</p>
           </div>
-
-          <figure className="heroVisualFrame" aria-label="Modelo visual de tiers de memoria">
-            <img src={memoryTieringHero} alt="Visual tecnico de un servidor con los tiers DRAM y NVMe." />
-            <figcaption>
-              <span><i className="dramDot" />Tier 0 / DRAM / activo</span>
-              <span><i className="nvmeDot" />Tier 1 / NVMe / frio</span>
-            </figcaption>
-            <div className="heroVisualMetric"><span>Capacidad por defecto</span><strong>2x</strong></div>
-          </figure>
+          <div className="appFacts" aria-label="Criterios de la herramienta">
+            <span><b>1</b> Mide el pico, no la media</span>
+            <span><b>2</b> Protege la memoria activa en DRAM</span>
+            <span><b>3</b> Dimensiona NVMe con evidencia</span>
+          </div>
         </div>
-      </section>
+      </header>
 
       <section className="ruleBand" id="simulator" aria-labelledby="sim-title">
         <div className="sectionHeader">
-          <p className="eyebrow">Laboratorio de decision</p>
+          <p className="eyebrow">Diagnostico guiado</p>
           <h2 id="sim-title">
-            Mira como cambia la decision cuando observas el workload en distintos momentos.
+            Ingresa una evidencia. Obten una recomendacion. Entiende por que.
           </h2>
         </div>
 
@@ -485,6 +478,10 @@ function App() {
                 : `El pico de ${exploration.peak} GB supera el presupuesto de ${tiering.dramTierBudget} GB. Medir mas, aumentar DRAM o excluir este workload.`}
             </p>
             <div className="verdictRule"><span>Regla aplicada</span><strong>{exploration.peak} GB / {tiering.dramTierBudget} GB</strong></div>
+            <button className="copyAssessment" type="button" onClick={copyAssessment}>
+              <Copy size={16} />
+              {reportCopied ? "Resumen copiado" : "Copiar resumen para el equipo"}
+            </button>
             <a href="#assessment">Ver como obtener la evidencia en vCenter <ArrowRight size={16} /></a>
           </aside>
         </div>
