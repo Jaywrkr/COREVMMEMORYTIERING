@@ -21,6 +21,7 @@ import vcenterActiveMemory from "./assets/vcenter-active-memory.png";
 import nvmeDeviceSelection from "./assets/nvme-device-selection.png";
 import nvmeSizingRatios from "./assets/nvme-sizing-ratios.png";
 import vcenterStatisticsLevels from "./assets/vcenter-statistics-levels.png";
+import configurationProfilesMemoryTiering from "./assets/configuration-profiles-memory-tiering.png";
 import "./styles.css";
 
 type HintProps = {
@@ -1436,6 +1437,10 @@ function App() {
             <button className={enableScope === "selected" ? "active" : ""} type="button" onClick={() => setEnableScope("selected")}><span>Alternativa</span><strong>Hosts seleccionados</strong><p>Activa solo en hosts específicos cuando el diseño lo requiere.</p></button>
           </div>
           <div className="scopeResult"><span>Plan seleccionado</span><strong>{enableScope === "profile" ? "Configuracion coherente con excepciones controladas" : "Habilitacion selectiva por host"}</strong><p>{enableScope === "profile" ? "Usa overrides para no habilitar Memory Tiering donde haya VMs con limitaciones de compatibilidad." : "Documenta qué hosts se excluyen y por qué, para evitar una configuración desigual sin intención."}</p></div>
+          <figure className="profileEvidence">
+            <img src={configurationProfilesMemoryTiering} alt="vSphere Configuration Profiles mostrando memory_tiering true y la opcion Host Overrides." />
+            <figcaption><strong>Lo que confirma la captura:</strong> `memory_tiering: true` puede declararse como ajuste común del clúster; <em>Host Overrides</em> permite conservar esa intención sin forzar la misma configuración en todos los hosts.</figcaption>
+          </figure>
         </div>
       </section>
     </main>
