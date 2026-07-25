@@ -251,6 +251,30 @@ const workloadProfiles = [
   { id: "latency", label: "Latencia critica", peak: 1024, note: "Revisar limitaciones primero" },
 ];
 
+const vsanScenarios = [
+  {
+    id: "dedicated",
+    label: "Mismo cluster, dispositivos dedicados",
+    status: "supported",
+    title: "Coexistencia soportada",
+    body: "vSAN usa sus propios dispositivos y Memory Tiering usa un NVMe fisico o logico dedicado. Las dos funciones trabajan en el mismo cluster sin competir por ese recurso.",
+  },
+  {
+    id: "shared-drive",
+    label: "Mismo dispositivo NVMe",
+    status: "blocked",
+    title: "No soportado en produccion",
+    body: "Compartir el device provoca competencia por ancho de banda. Memory Tiering necesita capacidad y rendimiento predecibles para paginas de memoria.",
+  },
+  {
+    id: "datastore",
+    label: "Datastore vSAN para Memory Tiering",
+    status: "blocked",
+    title: "No es una arquitectura valida",
+    body: "Un datastore vSAN no puede proporcionar el tier de Memory Tiering. El tier requiere su propio dispositivo fisico o logico, no almacenamiento presentado por vSAN.",
+  },
+];
+
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
@@ -262,6 +286,7 @@ function App() {
   const [hardwareChecks, setHardwareChecks] = useState({ nvme: true, endurance: false, performance: false, dwpd: false, oem: false });
   const [extendedHistory, setExtendedHistory] = useState(false);
   const [greenfieldPath, setGreenfieldPath] = useState<"cost" | "density">("cost");
+  const [vsanScenario, setVsanScenario] = useState("dedicated");
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -355,6 +380,7 @@ function App() {
   const evidenceCompleted = Object.values(evidenceChecks).filter(Boolean).length;
   const hardwareCompleted = Object.values(hardwareChecks).filter(Boolean).length;
   const hardwareReady = hardwareCompleted === Object.keys(hardwareChecks).length;
+  const activeVsanScenario = vsanScenarios.find((scenario) => scenario.id === vsanScenario) ?? vsanScenarios[0];
 
   return (
     <main>
@@ -1027,6 +1053,62 @@ function App() {
               <li key={drive}>{drive}</li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      <section className="vsanLab" id="vsan" aria-labelledby="vsan-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Parte 4 / vSAN y Memory Tiering</p>
+          <h2 id="vsan-title">Pueden coexistir. No pueden compartir el recurso.</h2>
+        </div>
+
+        <div className="vsanScenarioPicker" role="group" aria-label="Escenarios de compatibilidad vSAN y Memory Tiering">
+          {vsanScenarios.map((scenario) => (
+            <button
+              className={vsanScenario === scenario.id ? `vsanScenario active ${scenario.status}` : `vsanScenario ${scenario.status}`}
+              key={scenario.id}
+              type="button"
+              onClick={() => setVsanScenario(scenario.id)}
+            >
+              <span>{scenario.status === "supported" ? "Soportado" : "Bloqueado"}</span>
+              <strong>{scenario.label}</strong>
+            </button>
+          ))}
+        </div>
+
+        <div className={activeVsanScenario.status === "supported" ? "clusterCanvas supported" : "clusterCanvas blocked"}>
+          <div className="clusterHeader"><span>VCF cluster</span><strong>vSAN + Memory Tiering</strong></div>
+          <div className="vmLane">
+            <div className="vmNode"><Monitor size={20} /><span>VM</span><small>Aplicacion</small></div>
+            <div className="vmNode"><Monitor size={20} /><span>VM</span><small>Aplicacion</small></div>
+            <div className="vmNode"><Monitor size={20} /><span>VM</span><small>Aplicacion</small></div>
+          </div>
+          <div className="resourceCanvas">
+            <div className="resourcePath vsanPath">
+              <span>Storage path</span>
+              <strong>vSAN datastore</strong>
+              <small>Almacenamiento de VM</small>
+              <i />
+              <b>{activeVsanScenario.id === "shared-drive" ? "NVMe compartido" : "NVMe / disk group vSAN"}</b>
+            </div>
+            <div className="resourcePath memoryPath">
+              <span>Memory path</span>
+              <strong>Memory Tiering</strong>
+              <small>Paginas frias de VM</small>
+              <i />
+              <b>{activeVsanScenario.id === "dedicated" ? "NVMe dedicado" : activeVsanScenario.id === "datastore" ? "Datastore vSAN (invalido)" : "NVMe compartido"}</b>
+            </div>
+          </div>
+          <div className="clusterOutcome">
+            <div className="outcomeMark">{activeVsanScenario.status === "supported" ? <CheckCircle2 size={26} /> : <XCircle size={26} />}</div>
+            <div><span>Veredicto de arquitectura</span><h3>{activeVsanScenario.title}</h3><p>{activeVsanScenario.body}</p></div>
+          </div>
+        </div>
+
+        <div className="vsanRules">
+          <article><strong>Coexisten</strong><p>VMs pueden usar un datastore vSAN y Memory Tiering a la vez, en el mismo cluster.</p></article>
+          <article><strong>No compiten</strong><p>El dispositivo de Memory Tiering debe ser fisico o logico dedicado; no se comparte con vSAN ni otros datastores.</p></article>
+          <article><strong>Operan por separado</strong><p>La similitud de arquitectura no significa que compartan datos, capas de cifrado o recursos.</p></article>
         </div>
       </section>
     </main>

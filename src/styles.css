@@ -1391,6 +1391,178 @@ input[type="range"] {
   .greenfieldDecision { grid-template-columns: 1fr; gap: 12px; }
 }
 
+/* vSAN coexistence lab */
+.vsanLab {
+  padding: 112px clamp(16px, 4vw, 64px);
+  background: #07111d;
+  color: #edf6ff;
+}
+
+.vsanLab .sectionHeader { border-top-color: #2c4054; }
+.vsanLab .eyebrow { color: #72c9ff; }
+
+.vsanScenarioPicker {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 auto 1px;
+  background: #32475a;
+}
+
+.vsanScenario {
+  min-height: 126px;
+  display: grid;
+  align-content: space-between;
+  gap: 18px;
+  padding: 20px;
+  color: #dbeaf8;
+  text-align: left;
+  border: 0;
+  border-top: 4px solid transparent;
+  background: #0b1825;
+  cursor: pointer;
+  font: inherit;
+}
+
+.vsanScenario:hover,
+.vsanScenario.active { background: #122638; }
+.vsanScenario.active.supported { border-top-color: #198038; }
+.vsanScenario.active.blocked { border-top-color: #fa4d56; }
+.vsanScenario span { color: #a6bdd1; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.vsanScenario.supported span { color: #72e0b0; }
+.vsanScenario.blocked span { color: #ff8389; }
+.vsanScenario strong { font-size: 1.05rem; font-weight: 500; }
+
+.clusterCanvas {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: 0.68fr 1.32fr;
+  gap: 1px;
+  margin-inline: auto;
+  background: #32475a;
+  border: 1px solid #32475a;
+}
+
+.clusterHeader,
+.vmLane,
+.resourceCanvas,
+.clusterOutcome { background: #0b1825; }
+
+.clusterHeader {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 18px 22px;
+  color: #a6bdd1;
+  border-bottom: 1px solid #32475a;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.clusterHeader strong { color: #edf6ff; font-size: 0.82rem; }
+
+.vmLane {
+  min-height: 288px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  align-items: center;
+  padding: 22px;
+  background: #32475a;
+}
+
+.vmNode {
+  min-height: 126px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 12px;
+  color: #edf6ff;
+  background: #122638;
+}
+
+.vmNode svg { color: #72c9ff; }
+.vmNode span { font-weight: 600; }
+.vmNode small { color: #a6bdd1; font-size: 0.72rem; }
+
+.resourceCanvas {
+  min-height: 288px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  padding: 22px;
+  background: #32475a;
+}
+
+.resourcePath {
+  position: relative;
+  display: grid;
+  align-content: space-between;
+  gap: 9px;
+  overflow: hidden;
+  padding: 18px;
+  background: #ffffff;
+  color: #162432;
+}
+
+.resourcePath > span { color: #637487; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+.resourcePath strong { font-size: 1.4rem; font-weight: 400; }
+.resourcePath small { color: #52616f; }
+.resourcePath i { width: 100%; height: 4px; display: block; }
+.resourcePath b { align-self: end; font-size: 0.84rem; }
+.vsanPath i { background: #8a3ffc; }
+.memoryPath i { background: #0f62fe; }
+.clusterCanvas.supported .memoryPath { border-bottom: 5px solid #198038; }
+.clusterCanvas.blocked .resourcePath { border-bottom: 5px solid #fa4d56; }
+.clusterCanvas.blocked .resourcePath b { color: #a2191f; }
+
+.clusterOutcome {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 28px;
+  color: #edf6ff;
+}
+
+.outcomeMark { display: grid; width: 52px; height: 52px; flex: 0 0 auto; place-items: center; background: #173a2b; }
+.supported .outcomeMark svg { color: #72e0b0; }
+.blocked .outcomeMark { background: #4b1f25; }
+.blocked .outcomeMark svg { color: #ff8389; }
+.clusterOutcome span { color: #a6bdd1; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.clusterOutcome h3 { margin: 6px 0 9px; font-size: clamp(1.45rem, 2.8vw, 2.3rem); font-weight: 400; line-height: 1; }
+.clusterOutcome p { margin: 0; color: #c5d6e7; line-height: 1.5; }
+
+.vsanRules {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin: 28px auto 0;
+  background: #32475a;
+}
+
+.vsanRules article { min-height: 190px; display: grid; align-content: space-between; gap: 18px; padding: 22px; background: #0b1825; }
+.vsanRules strong { color: #72c9ff; font-size: 1.18rem; font-weight: 500; }
+.vsanRules p { margin: 0; color: #a6bdd1; line-height: 1.52; }
+
+@media (max-width: 920px) {
+  .vsanScenarioPicker,
+  .clusterCanvas,
+  .vsanRules { grid-template-columns: 1fr; }
+  .clusterHeader { grid-column: auto; }
+}
+
+@media (max-width: 620px) {
+  .vsanLab { padding-block: 80px; }
+  .resourceCanvas,
+  .vmLane { grid-template-columns: 1fr; }
+}
+
 /* Refined composition: use an editorial narrative instead of a stack of equal cards. */
 .hero {
   min-height: 820px;
