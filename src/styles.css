@@ -1980,6 +1980,72 @@ input[type="range"] {
   .configurationRunbook { display: grid; grid-template-columns: 1fr; }
 }
 
+/* Partition and enablement decisions */
+.partitionLab {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(310px, 0.8fr) minmax(420px, 1.2fr);
+  gap: 1px;
+  margin: 28px auto 0;
+  background: #32475a;
+  border: 1px solid #32475a;
+}
+
+.partitionTopologyPicker,
+.topologyResult { padding: 28px; background: #ffffff; }
+.partitionTopologyPicker { color: #dbeaf8; background: #0b1825; }
+.partitionTopologyPicker .eyebrow { color: #72c9ff; }
+.partitionTopologyPicker h3 { margin: 0 0 22px; font-size: clamp(1.55rem, 2.8vw, 2.35rem); font-weight: 400; line-height: 1.05; }
+.topologyOption { width: 100%; display: grid; gap: 7px; margin-top: 1px; padding: 15px; color: #dbeaf8; text-align: left; border: 0; border-left: 3px solid transparent; background: #122638; cursor: pointer; font: inherit; }
+.topologyOption:hover,
+.topologyOption.active { border-left-color: #72c9ff; background: #18354c; }
+.topologyOption span { color: #72e0b0; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; }
+.topologyOption.blocked span { color: #ff8389; }
+.topologyOption strong { font-size: 0.92rem; font-weight: 600; }
+
+.topologyResult { display: grid; grid-template-columns: minmax(180px, 0.65fr) minmax(280px, 1.35fr); gap: 36px; align-items: center; color: #0b5a28; background: #e7f7ed; border-top: 5px solid #198038; }
+.topologyResult.blocked { color: #8a1c21; background: #fff1f1; border-top-color: #fa4d56; }
+.deviceSketch { display: grid; gap: 12px; }
+.hostSketch { width: max-content; padding: 6px 9px; color: #edf6ff; background: #0b1825; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; }
+.deviceRow { display: flex; gap: 8px; }
+.deviceUnit { min-width: 70px; padding: 18px 10px; color: #edf6ff; background: #0f62fe; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.75rem; font-style: normal; text-align: center; }
+.blocked .deviceUnit:last-child { opacity: 0.42; background: #da1e28; }
+.deviceSketch b { color: #52616f; font-size: 0.78rem; font-weight: 600; line-height: 1.4; }
+.topologyResult > div:last-child > span,
+.scopeResult span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; }
+.topologyResult h3 { margin: 10px 0; font-size: clamp(1.55rem, 2.7vw, 2.3rem); font-weight: 400; line-height: 1.05; }
+.topologyResult p { margin: 0; color: #52616f; line-height: 1.52; }
+
+.hostScopeLab { max-width: 1440px; display: grid; grid-template-columns: minmax(280px, 0.72fr) minmax(400px, 1.28fr); gap: 1px; margin: 28px auto 0; background: #32475a; border: 1px solid #32475a; }
+.hostScopeLab > div:first-child,
+.scopeOptions,
+.scopeResult { padding: 28px; background: #ffffff; }
+.hostScopeLab > div:first-child { color: #dbeaf8; background: #0b1825; }
+.hostScopeLab .eyebrow { color: #72c9ff; }
+.hostScopeLab h3 { margin: 0 0 16px; font-size: clamp(1.55rem, 2.8vw, 2.35rem); font-weight: 400; line-height: 1.05; }
+.hostScopeLab p { margin: 0; color: #a6bdd1; line-height: 1.52; }
+.scopeOptions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; padding: 1px; background: #d9e2ea; }
+.scopeOptions button { min-height: 205px; display: grid; align-content: space-between; gap: 14px; padding: 20px; color: #162432; text-align: left; border: 0; border-top: 4px solid transparent; background: #ffffff; cursor: pointer; font: inherit; }
+.scopeOptions button:hover,
+.scopeOptions button.active { border-top-color: #0f62fe; background: #edf5ff; }
+.scopeOptions span { color: #0f62fe; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.67rem; font-weight: 700; text-transform: uppercase; }
+.scopeOptions strong { font-size: 1.05rem; font-weight: 500; line-height: 1.2; }
+.scopeOptions p { color: #637487; font-size: 0.82rem; }
+.scopeResult { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(170px, 0.35fr) minmax(280px, 0.65fr) minmax(360px, 1fr); gap: 24px; align-items: baseline; color: #003a6d; background: #e9f2ff; border-top: 5px solid #0f62fe; }
+.scopeResult strong { font-size: 1.25rem; font-weight: 400; }
+.scopeResult p { color: #52616f; }
+
+@media (max-width: 920px) {
+  .partitionLab,
+  .hostScopeLab,
+  .topologyResult { grid-template-columns: 1fr; }
+  .scopeResult { grid-template-columns: 1fr; gap: 12px; }
+}
+
+@media (max-width: 620px) {
+  .scopeOptions { grid-template-columns: 1fr; }
+}
+
 /* Refined composition: use an editorial narrative instead of a stack of equal cards. */
 .hero {
   min-height: 820px;

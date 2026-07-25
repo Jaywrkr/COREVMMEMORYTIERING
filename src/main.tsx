@@ -312,6 +312,12 @@ const deploymentRoutes = {
   ],
 } as const;
 
+const partitionTopologies = [
+  { id: "single", label: "Un NVMe por host", status: "supported", title: "Topologia simple y valida", body: "Crea una particion en el unico dispositivo NVMe dedicado por host." },
+  { id: "raid", label: "RAID por hardware", status: "supported", title: "Un dispositivo logico dedicado", body: "El controlador presenta un unico dispositivo logico. La redundancia pertenece a la capa RAID, no a Memory Tiering." },
+  { id: "two-standalone", label: "Dos NVMe sin RAID", status: "blocked", title: "No aporta redundancia ni capacidad", body: "VCF 9.0 puede permitir crear ambas particiones, pero monta solo un drive de forma no deterministica al arrancar. El segundo se ignora." },
+];
+
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
@@ -333,6 +339,8 @@ function App() {
   const [automationSetup, setAutomationSetup] = useState({ vcenter: "", cluster: "" });
   const [automationChecks, setAutomationChecks] = useState({ command: false, disk: false, clean: false, lab: false });
   const [configurationProgress, setConfigurationProgress] = useState(0);
+  const [partitionTopology, setPartitionTopology] = useState("single");
+  const [enableScope, setEnableScope] = useState<"profile" | "selected">("profile");
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -434,6 +442,7 @@ function App() {
   const automationConfirmed = Object.values(automationChecks).filter(Boolean).length;
   const automationReady = Boolean(automationSetup.vcenter.trim() && automationSetup.cluster.trim()) && automationConfirmed === 4;
   const dueDiligenceReady = evidenceCompleted === 3 && hardwareReady && reclaimReady;
+  const activePartitionTopology = partitionTopologies.find((topology) => topology.id === partitionTopology) ?? partitionTopologies[0];
 
   return (
     <main>
@@ -1395,6 +1404,38 @@ function App() {
           <span>Estado del runbook</span>
           <strong>{configurationProgress === 4 ? "Implementacion lista para seguimiento" : `${configurationProgress}/4 momentos revisados`}</strong>
           <p>{configurationProgress === 4 ? "La configuracion no termina al habilitar la funcion. Usa la observacion posterior para comprobar que la decision de diseño sigue siendo valida." : "Avanza por el runbook en orden. Los dos pasos tecnicos no sustituyen la preparacion ni la comprobacion posterior."}</p>
+        </div>
+
+        <div className="partitionLab" aria-label="Comprobador de topologia de particion">
+          <div className="partitionTopologyPicker">
+            <p className="eyebrow">Topologia de particion</p>
+            <h3>Un host monta un solo dispositivo para Memory Tiering.</h3>
+            {partitionTopologies.map((topology) => (
+              <button className={partitionTopology === topology.id ? `topologyOption active ${topology.status}` : `topologyOption ${topology.status}`} key={topology.id} type="button" onClick={() => setPartitionTopology(topology.id)}>
+                <span>{topology.status === "supported" ? "Valido" : "No usar para redundancia"}</span><strong>{topology.label}</strong>
+              </button>
+            ))}
+          </div>
+          <div className={activePartitionTopology.status === "supported" ? "topologyResult supported" : "topologyResult blocked"}>
+            <div className="deviceSketch">
+              <span className="hostSketch">Host</span>
+              <div className="deviceRow">
+                <i className="deviceUnit">NVMe</i>
+                {partitionTopology !== "single" && <i className="deviceUnit">NVMe</i>}
+              </div>
+              <b>{partitionTopology === "two-standalone" ? "Solo uno se montara" : "Un dispositivo logico para Memory Tiering"}</b>
+            </div>
+            <div><span>Resultado</span><h3>{activePartitionTopology.title}</h3><p>{activePartitionTopology.body}</p></div>
+          </div>
+        </div>
+
+        <div className="hostScopeLab">
+          <div><p className="eyebrow">Alcance de habilitacion</p><h3>No todos los hosts tienen que participar.</h3><p>Selecciona una estrategia. La configuracion puede aplicarse por host o por clúster, con excepciones para workloads no aptos.</p></div>
+          <div className="scopeOptions" role="group" aria-label="Estrategia de habilitacion">
+            <button className={enableScope === "profile" ? "active" : ""} type="button" onClick={() => setEnableScope("profile")}><span>Recomendado</span><strong>Configuration Profiles + host overrides</strong><p>Habilita de forma consistente y excluye hosts con excepciones.</p></button>
+            <button className={enableScope === "selected" ? "active" : ""} type="button" onClick={() => setEnableScope("selected")}><span>Alternativa</span><strong>Hosts seleccionados</strong><p>Activa solo en hosts específicos cuando el diseño lo requiere.</p></button>
+          </div>
+          <div className="scopeResult"><span>Plan seleccionado</span><strong>{enableScope === "profile" ? "Configuracion coherente con excepciones controladas" : "Habilitacion selectiva por host"}</strong><p>{enableScope === "profile" ? "Usa overrides para no habilitar Memory Tiering donde haya VMs con limitaciones de compatibilidad." : "Documenta qué hosts se excluyen y por qué, para evitar una configuración desigual sin intención."}</p></div>
         </div>
       </section>
     </main>
