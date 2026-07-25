@@ -258,6 +258,8 @@ function App() {
   const [selectedProfile, setSelectedProfile] = useState("general");
   const [observationPoint, setObservationPoint] = useState(68);
   const [reportCopied, setReportCopied] = useState(false);
+  const [evidenceChecks, setEvidenceChecks] = useState({ realtime: false, busyWindow: false, peakRecorded: false });
+  const [hardwareChecks, setHardwareChecks] = useState({ nvme: true, endurance: false, performance: false, dwpd: false, oem: false });
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -347,6 +349,10 @@ function App() {
     setReportCopied(true);
     window.setTimeout(() => setReportCopied(false), 2200);
   };
+
+  const evidenceCompleted = Object.values(evidenceChecks).filter(Boolean).length;
+  const hardwareCompleted = Object.values(hardwareChecks).filter(Boolean).length;
+  const hardwareReady = hardwareCompleted === Object.keys(hardwareChecks).length;
 
   return (
     <main>
@@ -547,6 +553,35 @@ function App() {
               <p>{item.body}</p>
             </article>
           ))}
+        </div>
+
+        <div className="evidenceGate" aria-label="Checklist de evidencia para sizing">
+          <div className="gateIntro">
+            <p className="eyebrow">Gate 01 / Evidencia</p>
+            <h3>No avances a sizing hasta cerrar esta evidencia.</h3>
+            <p>Marca solo lo que ya verificaste en tu entorno. El objetivo es evitar que una muestra bonita se convierta en una compra equivocada.</p>
+          </div>
+          <div className="checklist">
+            {[
+              ["realtime", "Vi Active en Real-time", "La metrica aparece en la VM correcta y en KB."],
+              ["busyWindow", "Inclui una ventana ocupada", "La muestra cubre carga real, no solo un momento tranquilo."],
+              ["peakRecorded", "Registre el pico", "Tengo un valor maximo para comparar contra 50% de DRAM."],
+            ].map(([key, label, description]) => (
+              <label className={evidenceChecks[key as keyof typeof evidenceChecks] ? "checkItem done" : "checkItem"} key={key}>
+                <input
+                  type="checkbox"
+                  checked={evidenceChecks[key as keyof typeof evidenceChecks]}
+                  onChange={(event) => setEvidenceChecks((current) => ({ ...current, [key]: event.target.checked }))}
+                />
+                <span><strong>{label}</strong><small>{description}</small></span>
+              </label>
+            ))}
+          </div>
+          <div className={evidenceCompleted === 3 ? "gateResult ready" : "gateResult"}>
+            <span>{evidenceCompleted}/3 verificado</span>
+            <strong>{evidenceCompleted === 3 ? "Evidencia lista para dimensionar" : "Aun no hay evidencia suficiente"}</strong>
+            <p>{evidenceCompleted === 3 ? "Lleva el pico al Workbench y prueba ratios en el siguiente paso." : "Completa los puntos pendientes antes de usar el resultado del Workbench como recomendacion."}</p>
+          </div>
         </div>
       </section>
 
@@ -854,6 +889,37 @@ function App() {
               <strong>{requirement.value}</strong>
             </article>
           ))}
+        </div>
+
+        <div className="hardwareGate" aria-label="Validador de requisitos de hardware">
+          <div className="gateIntro">
+            <p className="eyebrow">Gate 03 / Hardware</p>
+            <h3>Califica el dispositivo antes de aprobar la compra.</h3>
+            <p>Usa este filtro como una lista de salida. Una respuesta pendiente no es una aprobacion: es una investigacion pendiente.</p>
+          </div>
+          <div className="hardwareChecklist">
+            {[
+              ["nvme", "El dispositivo es NVMe"],
+              ["endurance", "Endurance Class D o 7300 TBW+"],
+              ["performance", "Performance Class F o G"],
+              ["dwpd", "Mixed Use con 3 DWPD+ si no hay clase"],
+              ["oem", "Validado en Broadcom / OEM"],
+            ].map(([key, label]) => (
+              <label className={hardwareChecks[key as keyof typeof hardwareChecks] ? "hardwareCheck done" : "hardwareCheck"} key={key}>
+                <input
+                  type="checkbox"
+                  checked={hardwareChecks[key as keyof typeof hardwareChecks]}
+                  onChange={(event) => setHardwareChecks((current) => ({ ...current, [key]: event.target.checked }))}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+          <div className={hardwareReady ? "gateResult ready" : "gateResult"}>
+            <span>{hardwareCompleted}/5 confirmado</span>
+            <strong>{hardwareReady ? "Especificacion lista para compra" : "No aprobar el dispositivo todavia"}</strong>
+            <p>{hardwareReady ? "El drive supera los criterios tecnicos iniciales. Confirma capacidad y formato fisico con el servidor." : "Usa la guia de compatibilidad para cerrar las condiciones pendientes."}</p>
+          </div>
         </div>
 
         <div className="copyBlock">

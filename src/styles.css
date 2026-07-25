@@ -1656,6 +1656,112 @@ input[type="range"] {
   }
 }
 
+/* Decision gates turn supporting content into progress through the workflow. */
+.evidenceGate,
+.hardwareGate {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(320px, 1.08fr) minmax(260px, 0.76fr);
+  gap: 1px;
+  margin: 28px auto 0;
+  background: #b8c5d1;
+  border: 1px solid #b8c5d1;
+}
+
+.gateIntro,
+.checklist,
+.hardwareChecklist,
+.gateResult {
+  padding: 28px;
+  background: #ffffff;
+}
+
+.gateIntro {
+  color: #eaf3fb;
+  background: #0b1825;
+}
+
+.gateIntro .eyebrow { color: #72c9ff; }
+.gateIntro h3 { margin: 0 0 18px; font-size: clamp(1.65rem, 3vw, 2.6rem); font-weight: 400; line-height: 1.05; }
+.gateIntro p:last-child { margin: 0; color: #a6bdd1; line-height: 1.55; }
+
+.checklist,
+.hardwareChecklist {
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  padding: 0;
+  background: #d9e2ea;
+}
+
+.checkItem,
+.hardwareCheck {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.hardwareCheck { min-height: 58px; }
+
+.checkItem:hover,
+.hardwareCheck:hover { background: #f3f7fb; }
+.checkItem.done,
+.hardwareCheck.done { background: #e7f7ed; }
+
+.checkItem input,
+.hardwareCheck input {
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  accent-color: #198038;
+}
+
+.checkItem span { display: grid; gap: 5px; }
+.checkItem strong,
+.hardwareCheck span { color: #162432; font-size: 0.92rem; font-weight: 600; }
+.checkItem small { color: #637487; font-size: 0.8rem; line-height: 1.4; }
+
+.gateResult {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  color: #4d3700;
+  background: #fff8e1;
+  border-top: 5px solid #f1c21b;
+}
+
+.gateResult.ready {
+  color: #0b5a28;
+  background: #e7f7ed;
+  border-top-color: #198038;
+}
+
+.gateResult span {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gateResult strong { font-size: clamp(1.35rem, 2.5vw, 2rem); font-weight: 400; line-height: 1.05; }
+.gateResult p { margin: 0; color: #52616f; font-size: 0.88rem; line-height: 1.55; }
+
+.hardwareGate { margin-top: 28px; }
+.hardwareGate .gateIntro { background: #0f62fe; }
+.hardwareGate .gateIntro .eyebrow { color: #dbeafe; }
+.hardwareGate .gateIntro p:last-child { color: #dbeafe; }
+
+@media (max-width: 920px) {
+  .evidenceGate,
+  .hardwareGate { grid-template-columns: 1fr; }
+}
+
 /* Interactive decision studio */
 .decisionStudio {
   max-width: 1440px;
