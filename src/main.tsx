@@ -275,6 +275,27 @@ const vsanScenarios = [
   },
 ];
 
+const storageSources = [
+  { id: "new", label: "NVMe sin asignar", detail: "No tiene datastore ni particiones de otro servicio." },
+  { id: "local", label: "Local datastore", detail: "El NVMe hoy presenta almacenamiento local al host." },
+  { id: "vsan", label: "vSAN", detail: "El NVMe hoy pertenece al almacenamiento distribuido del cluster." },
+];
+
+const repurposeSteps = [
+  "Validar endurance Class D y performance Class F o G.",
+  "Retirar el dispositivo de vSAN o del datastore local.",
+  "Eliminar las particiones que quedaron del uso anterior.",
+  "Crear la particion exclusiva para Memory Tiering.",
+  "Configurar Memory Tiering en el host o cluster.",
+];
+
+const reclaimChecks = [
+  { id: "capacity", label: "El datastore de origen puede perder esta capacidad", detail: "Hay capacidad remanente o una ruta real para mover los datos." },
+  { id: "data", label: "Los datos estan protegidos o ya fueron movidos", detail: "La reclamacion puede destruir las particiones del uso anterior." },
+  { id: "qualified", label: "El NVMe cumple Class D + F/G", detail: "El dispositivo sigue siendo apto para Memory Tiering despues de reasignarlo." },
+  { id: "ownership", label: "Tengo autorizacion para retirar el dispositivo", detail: "vSAN/local storage y sus consumidores ya fueron evaluados." },
+];
+
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
@@ -287,6 +308,10 @@ function App() {
   const [extendedHistory, setExtendedHistory] = useState(false);
   const [greenfieldPath, setGreenfieldPath] = useState<"cost" | "density">("cost");
   const [vsanScenario, setVsanScenario] = useState("dedicated");
+  const [storageSource, setStorageSource] = useState("new");
+  const [repurposeProgress, setRepurposeProgress] = useState(0);
+  const [deploymentMode, setDeploymentMode] = useState<"brownfield" | "greenfield">("brownfield");
+  const [reclaimSafety, setReclaimSafety] = useState<Record<string, boolean>>({ capacity: false, data: false, qualified: false, ownership: false });
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -381,6 +406,9 @@ function App() {
   const hardwareCompleted = Object.values(hardwareChecks).filter(Boolean).length;
   const hardwareReady = hardwareCompleted === Object.keys(hardwareChecks).length;
   const activeVsanScenario = vsanScenarios.find((scenario) => scenario.id === vsanScenario) ?? vsanScenarios[0];
+  const activeStorageSource = storageSources.find((source) => source.id === storageSource) ?? storageSources[0];
+  const reclaimConfirmed = Object.values(reclaimSafety).filter(Boolean).length;
+  const reclaimReady = reclaimConfirmed === reclaimChecks.length;
 
   return (
     <main>
@@ -1109,6 +1137,100 @@ function App() {
           <article><strong>Coexisten</strong><p>VMs pueden usar un datastore vSAN y Memory Tiering a la vez, en el mismo cluster.</p></article>
           <article><strong>No compiten</strong><p>El dispositivo de Memory Tiering debe ser fisico o logico dedicado; no se comparte con vSAN ni otros datastores.</p></article>
           <article><strong>Operan por separado</strong><p>La similitud de arquitectura no significa que compartan datos, capas de cifrado o recursos.</p></article>
+        </div>
+      </section>
+
+      <section className="storageLab" aria-labelledby="storage-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Storage considerations</p>
+          <h2 id="storage-title">No compartas el NVMe. Si hace falta, reasignalo correctamente.</h2>
+        </div>
+
+        <div className="storageWorkbench">
+          <div className="sourcePanel">
+            <p className="eyebrow">Origen del dispositivo</p>
+            <h3>De donde viene este NVMe?</h3>
+            <div className="sourceOptions" role="group" aria-label="Origen del dispositivo NVMe">
+              {storageSources.map((source) => (
+                <button
+                  className={storageSource === source.id ? "sourceOption active" : "sourceOption"}
+                  key={source.id}
+                  type="button"
+                  onClick={() => {
+                    setStorageSource(source.id);
+                    setRepurposeProgress(0);
+                  }}
+                >
+                  <strong>{source.label}</strong>
+                  <span>{source.detail}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="repurposeFlow" aria-label="Flujo para reasignar un dispositivo NVMe">
+            <div className="flowHeader">
+              <div><span>Estado actual</span><strong>{activeStorageSource.label}</strong></div>
+              <p>{storageSource === "new" ? "El dispositivo puede entrar directamente al proceso de validacion." : "Puedes reutilizarlo, pero no puede permanecer conectado al uso actual ni conservar particiones previas."}</p>
+            </div>
+            <ol>
+              {repurposeSteps.map((step, index) => {
+                const complete = index < repurposeProgress;
+                const current = index === repurposeProgress;
+                return (
+                  <li className={complete ? "complete" : current ? "current" : ""} key={step}>
+                    <button type="button" onClick={() => setRepurposeProgress(Math.min(index + 1, repurposeSteps.length))}>
+                      <span>{complete ? "OK" : String(index + 1).padStart(2, "0")}</span>
+                      <strong>{step}</strong>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+
+          <div className={repurposeProgress === repurposeSteps.length ? "repurposeResult ready" : "repurposeResult"}>
+            <span>Estado del dispositivo</span>
+            <strong>{repurposeProgress === repurposeSteps.length ? "Listo para Memory Tiering" : repurposeProgress === 0 ? "Aun asignado o sin validar" : "Transicion en curso"}</strong>
+            <p>{repurposeProgress === repurposeSteps.length ? "Ahora es un dispositivo dedicado. No agregues otros datastores ni particiones sobre este recurso." : `Completa ${repurposeSteps.length - repurposeProgress} paso${repurposeSteps.length - repurposeProgress === 1 ? "" : "s"} para usarlo exclusivamente como tier de memoria.`}</p>
+          </div>
+        </div>
+
+        <div className="storageRuleStrip">
+          <span>Produccion</span><strong>Un dispositivo fisico o logico local, dedicado y sin otras particiones.</strong><p>vSAN, NAS, SAN y local datastores pueden alojar VMs; ninguno puede proporcionar el dispositivo de Memory Tiering.</p>
+        </div>
+      </section>
+
+      <section className="reclaimLab" aria-labelledby="reclaim-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Decision de recuperacion</p>
+          <h2 id="reclaim-title">Antes de recuperar un NVMe, prueba que puedes permitirte perderlo.</h2>
+        </div>
+
+        <div className="reclaimMode" role="group" aria-label="Tipo de despliegue">
+          <button className={deploymentMode === "brownfield" ? "active" : ""} type="button" onClick={() => setDeploymentMode("brownfield")}><span>Brownfield</span><strong>El dispositivo ya existe en produccion</strong></button>
+          <button className={deploymentMode === "greenfield" ? "active" : ""} type="button" onClick={() => setDeploymentMode("greenfield")}><span>Greenfield VCF 9</span><strong>vSAN puede auto-claim durante el despliegue</strong></button>
+        </div>
+
+        <div className="reclaimBoard">
+          <div className="reclaimContext">
+            <span>{deploymentMode === "greenfield" ? "Atencion de despliegue" : "Atencion de produccion"}</span>
+            <h3>{deploymentMode === "greenfield" ? "El dispositivo que querias para memoria puede terminar en vSAN." : "El dispositivo puede contener capacidad que el datastore aun necesita."}</h3>
+            <p>{deploymentMode === "greenfield" ? "En VCF 9 no existe un flujo de despliegue para reclamar dispositivos directamente para Memory Tiering y vSAN puede auto-claimarlos. Planifica la recuperacion posterior si ocurre." : "No recuperes el NVMe solo porque esta disponible. Antes confirma capacidad, proteccion de datos y el impacto sobre consumidores actuales."}</p>
+          </div>
+          <div className="reclaimChecklist">
+            {reclaimChecks.map((check) => (
+              <label className={reclaimSafety[check.id] ? "reclaimCheck done" : "reclaimCheck"} key={check.id}>
+                <input type="checkbox" checked={reclaimSafety[check.id]} onChange={(event) => setReclaimSafety((current) => ({ ...current, [check.id]: event.target.checked }))} />
+                <span><strong>{check.label}</strong><small>{check.detail}</small></span>
+              </label>
+            ))}
+          </div>
+          <div className={reclaimReady ? "reclaimVerdict ready" : "reclaimVerdict"}>
+            <span>{reclaimConfirmed}/{reclaimChecks.length} condiciones confirmadas</span>
+            <strong>{reclaimReady ? "Puedes planificar la recuperacion" : "No recuperes el dispositivo aun"}</strong>
+            <p>{reclaimReady ? "Sigue el plan de reasignacion: retirar, limpiar particiones, crear la particion de Memory Tiering y configurar el host." : "La recuperacion no es una forma de crear capacidad gratis. Primero resuelve los riesgos pendientes."}</p>
+          </div>
         </div>
       </section>
     </main>
