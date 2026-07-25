@@ -1643,6 +1643,83 @@ input[type="range"] {
   .flowHeader { grid-template-columns: 1fr; gap: 12px; }
 }
 
+/* Device reclamation risk gate */
+.reclaimLab {
+  padding: 112px clamp(16px, 4vw, 64px);
+  background: #e9eef3;
+}
+
+.reclaimMode {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 auto 1px;
+  background: #b8c5d1;
+}
+
+.reclaimMode button {
+  min-height: 116px;
+  display: grid;
+  align-content: space-between;
+  gap: 18px;
+  padding: 20px;
+  color: #344250;
+  text-align: left;
+  border: 0;
+  border-top: 4px solid transparent;
+  background: #ffffff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.reclaimMode button:hover,
+.reclaimMode button.active { border-top-color: #0f62fe; background: #edf5ff; }
+.reclaimMode span { color: #0f62fe; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.reclaimMode strong { color: #162432; font-size: 1.05rem; font-weight: 500; }
+
+.reclaimBoard {
+  max-width: 1440px;
+  display: grid;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(380px, 1.22fr) minmax(250px, 0.7fr);
+  gap: 1px;
+  margin-inline: auto;
+  background: #b8c5d1;
+  border: 1px solid #b8c5d1;
+}
+
+.reclaimContext,
+.reclaimChecklist,
+.reclaimVerdict { padding: 28px; background: #ffffff; }
+.reclaimContext { color: #edf6ff; background: #0b1825; }
+.reclaimContext > span { color: #ffb3b8; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.reclaimContext h3 { margin: 16px 0; font-size: clamp(1.65rem, 3vw, 2.55rem); font-weight: 400; line-height: 1.05; }
+.reclaimContext p { margin: 0; color: #a6bdd1; line-height: 1.55; }
+
+.reclaimChecklist { display: grid; gap: 1px; padding: 0; background: #d9e2ea; }
+.reclaimCheck { min-height: 88px; display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: #ffffff; cursor: pointer; }
+.reclaimCheck:hover { background: #f3f7fb; }
+.reclaimCheck.done { background: #e7f7ed; }
+.reclaimCheck input { width: 19px; height: 19px; margin: 0; accent-color: #198038; }
+.reclaimCheck span { display: grid; gap: 5px; }
+.reclaimCheck strong { color: #162432; font-size: 0.9rem; font-weight: 600; }
+.reclaimCheck small { color: #637487; font-size: 0.78rem; line-height: 1.4; }
+
+.reclaimVerdict { display: grid; align-content: center; gap: 14px; color: #8a1c21; background: #fff1f1; border-top: 5px solid #fa4d56; }
+.reclaimVerdict.ready { color: #0b5a28; background: #e7f7ed; border-top-color: #198038; }
+.reclaimVerdict span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.reclaimVerdict strong { font-size: clamp(1.45rem, 2.8vw, 2.25rem); font-weight: 400; line-height: 1.05; }
+.reclaimVerdict p { margin: 0; color: #52616f; line-height: 1.5; }
+
+@media (max-width: 920px) {
+  .reclaimBoard { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .reclaimLab { padding-block: 80px; }
+  .reclaimMode { grid-template-columns: 1fr; }
+}
+
 /* Refined composition: use an editorial narrative instead of a stack of equal cards. */
 .hero {
   min-height: 820px;

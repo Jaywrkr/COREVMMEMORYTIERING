@@ -289,6 +289,13 @@ const repurposeSteps = [
   "Configurar Memory Tiering en el host o cluster.",
 ];
 
+const reclaimChecks = [
+  { id: "capacity", label: "El datastore de origen puede perder esta capacidad", detail: "Hay capacidad remanente o una ruta real para mover los datos." },
+  { id: "data", label: "Los datos estan protegidos o ya fueron movidos", detail: "La reclamacion puede destruir las particiones del uso anterior." },
+  { id: "qualified", label: "El NVMe cumple Class D + F/G", detail: "El dispositivo sigue siendo apto para Memory Tiering despues de reasignarlo." },
+  { id: "ownership", label: "Tengo autorizacion para retirar el dispositivo", detail: "vSAN/local storage y sus consumidores ya fueron evaluados." },
+];
+
 function App() {
   const [dramCapacity, setDramCapacity] = useState(1024);
   const [activeMemory, setActiveMemory] = useState(420);
@@ -303,6 +310,8 @@ function App() {
   const [vsanScenario, setVsanScenario] = useState("dedicated");
   const [storageSource, setStorageSource] = useState("new");
   const [repurposeProgress, setRepurposeProgress] = useState(0);
+  const [deploymentMode, setDeploymentMode] = useState<"brownfield" | "greenfield">("brownfield");
+  const [reclaimSafety, setReclaimSafety] = useState<Record<string, boolean>>({ capacity: false, data: false, qualified: false, ownership: false });
 
   const tiering = useMemo(() => {
     const dramTierBudget = dramCapacity / 2;
@@ -398,6 +407,8 @@ function App() {
   const hardwareReady = hardwareCompleted === Object.keys(hardwareChecks).length;
   const activeVsanScenario = vsanScenarios.find((scenario) => scenario.id === vsanScenario) ?? vsanScenarios[0];
   const activeStorageSource = storageSources.find((source) => source.id === storageSource) ?? storageSources[0];
+  const reclaimConfirmed = Object.values(reclaimSafety).filter(Boolean).length;
+  const reclaimReady = reclaimConfirmed === reclaimChecks.length;
 
   return (
     <main>
@@ -1187,6 +1198,39 @@ function App() {
 
         <div className="storageRuleStrip">
           <span>Produccion</span><strong>Un dispositivo fisico o logico local, dedicado y sin otras particiones.</strong><p>vSAN, NAS, SAN y local datastores pueden alojar VMs; ninguno puede proporcionar el dispositivo de Memory Tiering.</p>
+        </div>
+      </section>
+
+      <section className="reclaimLab" aria-labelledby="reclaim-title">
+        <div className="sectionHeader">
+          <p className="eyebrow">Decision de recuperacion</p>
+          <h2 id="reclaim-title">Antes de recuperar un NVMe, prueba que puedes permitirte perderlo.</h2>
+        </div>
+
+        <div className="reclaimMode" role="group" aria-label="Tipo de despliegue">
+          <button className={deploymentMode === "brownfield" ? "active" : ""} type="button" onClick={() => setDeploymentMode("brownfield")}><span>Brownfield</span><strong>El dispositivo ya existe en produccion</strong></button>
+          <button className={deploymentMode === "greenfield" ? "active" : ""} type="button" onClick={() => setDeploymentMode("greenfield")}><span>Greenfield VCF 9</span><strong>vSAN puede auto-claim durante el despliegue</strong></button>
+        </div>
+
+        <div className="reclaimBoard">
+          <div className="reclaimContext">
+            <span>{deploymentMode === "greenfield" ? "Atencion de despliegue" : "Atencion de produccion"}</span>
+            <h3>{deploymentMode === "greenfield" ? "El dispositivo que querias para memoria puede terminar en vSAN." : "El dispositivo puede contener capacidad que el datastore aun necesita."}</h3>
+            <p>{deploymentMode === "greenfield" ? "En VCF 9 no existe un flujo de despliegue para reclamar dispositivos directamente para Memory Tiering y vSAN puede auto-claimarlos. Planifica la recuperacion posterior si ocurre." : "No recuperes el NVMe solo porque esta disponible. Antes confirma capacidad, proteccion de datos y el impacto sobre consumidores actuales."}</p>
+          </div>
+          <div className="reclaimChecklist">
+            {reclaimChecks.map((check) => (
+              <label className={reclaimSafety[check.id] ? "reclaimCheck done" : "reclaimCheck"} key={check.id}>
+                <input type="checkbox" checked={reclaimSafety[check.id]} onChange={(event) => setReclaimSafety((current) => ({ ...current, [check.id]: event.target.checked }))} />
+                <span><strong>{check.label}</strong><small>{check.detail}</small></span>
+              </label>
+            ))}
+          </div>
+          <div className={reclaimReady ? "reclaimVerdict ready" : "reclaimVerdict"}>
+            <span>{reclaimConfirmed}/{reclaimChecks.length} condiciones confirmadas</span>
+            <strong>{reclaimReady ? "Puedes planificar la recuperacion" : "No recuperes el dispositivo aun"}</strong>
+            <p>{reclaimReady ? "Sigue el plan de reasignacion: retirar, limpiar particiones, crear la particion de Memory Tiering y configurar el host." : "La recuperacion no es una forma de crear capacidad gratis. Primero resuelve los riesgos pendientes."}</p>
+          </div>
         </div>
       </section>
     </main>
